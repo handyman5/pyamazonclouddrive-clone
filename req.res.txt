@@ -1,0 +1,7 @@
+https://www.amazon.com/clouddrive/api/?_=1303021781155&Operation=getUserStorage&customerId=XXXXXXXXXX&ContentType=JSON
+
+{"getUserStorageResponse":{"ResponseMetadata":{"RequestId":"13a1b56e-68bc-11e0-a9b8-778311bfb991"},"getUserStorageResult":{"customerId":"XXXXXXXXXXX","freeSpace":5368709120,"totalSpace":5368709120,"usedSpace":0}}}
+
+
+
+
