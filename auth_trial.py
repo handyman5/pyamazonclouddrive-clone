@@ -1,24 +1,70 @@
 import httplib
 import re
 import sys
-import urllib2
+import urllib
+import time
 
-conn=httplib.HTTPSConnection("www.amazon.com")
-headers={"Cookie":"session-id-time=2082787201l; session-id=192-9309567-1619917; ubid-main=192-3822733-3278467;"}
-conn.request("GET","/crouddrive",None,headers)
+conn=httplib.HTTPConnection("www.amazon.com")
+conn.request("GET","/")
 res=conn.getresponse()
 cookies = []
-for c in res.getheader("Set-Cookie").split(","):
-  cookies.append(re.sub(";.*","",c))
+for c in res.getheader("Set-Cookie").split(", "):
+  if c.startswith("session-") or c.startswith("ubid-"):
+    cookies.append(re.sub(";.*","",c))
 print cookies
-print res.getheader('Location')
+print "*"*20
+res.read()
+
+headers={"Cookie":"; ".join(cookies)}
+conn.request("GET","/",None,headers)
+res=conn.getresponse()
+cookies = []
+for c in res.getheader("Set-Cookie").split(", "):
+  if c.startswith("session-") or c.startswith("ubid-"):
+    cookies.append(re.sub(";.*","",c))
+print cookies
+print "*"*20
+res.read()
+
 conn.close()
 
-res=urllib2.urlopen("https://www.amazon.com/clouddrive/")
+conn=httplib.HTTPSConnection("www.amazon.com")
+headers={"Cookie":"; ".join(cookies)}
+conn.request("GET","/clouddrive",None,headers)
+res=conn.getresponse()
+cookies = []
+for c in res.getheader("Set-Cookie").split(", "):
+  if c.startswith("session-") or c.startswith("ubid-"):
+    cookies.append(re.sub(";.*","",c))
+print cookies
+print "*"*20
+res.read()
+
+location = res.getheader("Location")
+path = location.split("www.amazon.com",1)[1]
+#print path
+
+headers={"Cookie":"; ".join(cookies)}
+conn.request("GET",path,None,headers)
+res=conn.getresponse()
+#cookies = []
+#for c in res.getheader("Set-Cookie").split(","):
+#  cookies.append(re.sub(";.*","",c))
+#print cookies
+print "*"*20
+
 begin='<form name="signIn"'
 end='</form>'
 html=begin + res.read().split(begin)[1].split(end)[0] +end
-res.close()
+
+
+#conn.close()
+
+#res=urllib2.urlopen("https://www.amazon.com/clouddrive/")
+#begin='<form name="signIn"'
+#end='</form>'
+#html=begin + res.read().split(begin)[1].split(end)[0] +end
+#res.close()
 
 #print html.split("action")[1]
 
@@ -32,7 +78,7 @@ class Parser(HTMLParser):
   def handle_starttag(self, tag, attrs):
     d=dict(attrs)
     if tag=="form":
-      print d
+      #print d
       self.action=d.get("action","")
     elif tag=='input':
       if d.get('name'):
@@ -45,7 +91,7 @@ parser=Parser()
 parser.feed(html)
 parser.close()
 
-action=urllib2.urlparse.urlparse(parser.action)[2]
+action=parser.action.split("www.amazon.com",1)[1]
 params=parser.key_value.copy()
 
 #params["x"]=0
@@ -62,20 +108,75 @@ config=dict(parser.items("Credentials"))
 params["email"]=config["username"]
 params["password"]=config["password"]
 
-print params
-print action
-
-import urllib
-conn=httplib.HTTPSConnection("www.amazon.com")
+#print params
+#print action
+headers["Content-Type"]="application/x-www-form-urlencoded"
 body=urllib.urlencode(params)
-headers={"Cookie":"; ".join(cookies)}
-
 conn.request("POST",action,body,headers)
 res=conn.getresponse()
 
-#print res.read()
+cookies = []
+for c in res.getheader("Set-Cookie").split(", "):
+  if c.startswith("session-") or c.startswith("ubid-") or c.startswith("x-") or \
+  c.startswith("__")or c.startswith("at-"):
+    cookies.append(re.sub(";.*","",c))
+print cookies
+print "*"*20
+res.read()
 
+location = res.getheader("Location")
+path = location.split("www.amazon.com",1)[1]
+print path
 
+headers={"Cookie":"; ".join(cookies)}
+conn.request("GET",path,None,headers)
+res=conn.getresponse()
+
+for c in res.getheader("Set-Cookie").split(", "):
+  if c.startswith("session-") or c.startswith("ubid-") or c.startswith("x-") or \
+  c.startswith("__")or c.startswith("at-"):
+    cookies.append(re.sub(";.*","",c))
+print cookies
+print "*"*20
+#res.read()
+
+"""location = res.getheader("Location")
+path = location.split("www.amazon.com",1)[1]
+print path
+
+headers={"Cookie":"; ".join(cookies)}
+conn.request("GET",path,None,headers)
+res=conn.getresponse()
+"""
+html=res.read()
+
+customer_id=html.split("customerId",1)[1]
+customer_id=customer_id.split(">",1)[0]
+customer_id=re.sub('.*value="','',customer_id)
+customer_id=re.sub('".*','',customer_id)
+print customer_id
+
+username=html.split("customer_greeting",1)[1]
+username=username.split("<",1)[0]
+username=username.split(",")[1][1:]
+username=re.sub(r'\..*','',username)
+print username
+
+print "*"*20
+
+path="/clouddrive/api/?_=%d&Operation=getUserStorage&customerId=%s&ContentType=JSON" \
+  %(int(time.time()),customer_id)
+print path
+headers={"Cookie":"; ".join(cookies)}
+for c in cookies:
+  if c.startswith("session-id="):
+    headers["x-amzn-SessionId"]=c.replace("session-id=","")
+conn.request("GET",path,None,headers)
+res=conn.getresponse()
+
+json=res.read()
+
+print json
 sys.exit(0)
 
 
