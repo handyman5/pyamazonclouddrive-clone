@@ -1,12 +1,45 @@
 import urllib2
 import cookielib
 
-#cj = cookielib.CookieJar()
-#opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(cj))
+
+#redirect_handler = urllib2.HTTPRedirectHandler() 
+#class MyHTTPRedirectHandler(urllib2.HTTPRedirectHandler): 
+#    def http_error_302(self, req, fp, code, msg, headers): 
+#        print headers 
+#        return urllib2.HTTPRedirectHandler.http_error_302(self, req, fp, code, msg, headers) 
+#    http_error_301 = http_error_303 = http_error_307 = http_error_302 
+#cookieprocessor = urllib2.HTTPCookieProcessor() 
+#opener = urllib2.build_opener(MyHTTPRedirectHandler, cookieprocessor) 
+#urllib2.install_opener(opener) 
+#response =urllib2.urlopen("WHEREEVER") 
+#print response.read() 
+
+cj = cookielib.CookieJar()
+opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(cj))
 #urllib2.install_opener(opener)
 
+#res=opener.open("http://www.amazon.com/")
+
 end_point="https://www.amazon.com/clouddrive/"
-res=urllib2.urlopen(end_point)
+req=urllib2.Request(end_point,None,{'Cookie':'ubid-main=002-8989859-9917520; session-id-time=2082787201l;session-id=189-6539933-5925661;'})
+
+res=opener.open(req)
+#res.headers.headers.append('Set-Cookie: ubid-main=002-8989859-9917520; path=/; domain=.amazon.com; expires=Tue Jan 01 08:00:01 2036 GMT')
+#res.headers.headers.append('Set-Cookie: session-id-time=2082787201l; path=/; domain=.amazon.com; expires=Tue Jan 01 08:00:01 2036 GMT')
+#res.headers.headers.append('Set-Cookie: session-id=189-6539933-5925661; path=/; domain=.amazon.com; expires=Tue Jan 01 08:00:01 2036 GMT')
+for cookie in cj.make_cookies(res,req):
+  cj.set_cookie(cookie)
+
+print cj 
+print "*"*10
+
+opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(cj))
+req=urllib2.Request(end_point)
+print cj._cookies_for_request(req)
+res=opener.open(req)
+print cj
+print "*"*10
+
 begin='<form name="signIn"'
 end='</form>'
 html=begin + res.read().split(begin)[1].split(end)[0] +end
@@ -34,14 +67,14 @@ parser=Parser()
 parser.feed(html)
 parser.close()
 
-for key in parser.key_value.keys():
-  print "%s=%s"%(key,parser.key_value[key])
+#for key in parser.key_value.keys():
+#  print "%s=%s"%(key,parser.key_value[key])
 
 url=parser.action
 params=parser.key_value.copy()
 
-params["x"]=0
-params["y"]=0
+#params["x"]=0
+#params["y"]=0
 params["create"]=0
 #params["metadata1"]=""
 
@@ -56,7 +89,7 @@ params["password"]=config["password"]
 
 import urllib
 
-res=urllib2.urlopen(url,urllib.urlencode(params))
-print res.read()
+res=opener.open(url,urllib.urlencode(params))
+#print res.read()
 
 
