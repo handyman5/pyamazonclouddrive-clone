@@ -97,7 +97,7 @@ class Connection(object):
     self.session.update_cookies(resp.getheader("Set-Cookie"))
 
     if resp.getheader("Location"):
-      return self.do_get(resp.getheader("Location"),headers)
+      return self.do_get(resp.getheader("Location"))
 
     resp_body=resp.read()
     conn.close()

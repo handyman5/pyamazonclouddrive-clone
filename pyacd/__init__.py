@@ -23,16 +23,14 @@
 # 
 
 
-from pysugarsync.exception import PySugarSyncError
-from pysugarsync.auth import retrieve_token,is_valid_token
-from pysugarsync.user import get_user
-from pysugarsync.entity import get_base_folder
+from pyacd.exception import PyAmazonCloudDriveError
+from pyacd.auth import login
 
-from pysugarsync.connection import Connection
+from pyacd.connection import Connection
 
 debug_level=0
 conn=Connection()
 
-def set_token(token):
-  conn.token=token
+def set_session(session):
+  conn.session=session
 

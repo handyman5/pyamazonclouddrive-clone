@@ -22,53 +22,75 @@
 # The Software shall be used for Younger than you, not Older.
 # 
 
+import re
+import urllib
+from HTMLParser import HTMLParser
 
-import xml.dom.minidom
+import pyacd
 
-import pysugarsync
-
-auth_xml="""
-<authRequest>
-    <username>username</username>
-    <password>password</password>
-    <accessKeyId>access_key</accessKeyId>
-    <privateAccessKey>private_access_key</privateAccessKey>
-</authRequest>
-"""
-
-auth_dom=xml.dom.minidom.parseString(auth_xml)
-
-end_point = "https://api.sugarsync.com/authorization"
-
-def retrieve_token(**kwargs):
-  access_key=kwargs.get("access_key",None)
-  private_access_key=kwargs.get("private_access_key",None)
-  username=kwargs.get("username",None)
-  password=kwargs.get("password",None)
-
-  auth_dom.getElementsByTagName("accessKeyId")[0].firstChild.data=access_key
-  auth_dom.getElementsByTagName("privateAccessKey")[0].firstChild.data=private_access_key
-  auth_dom.getElementsByTagName("username")[0].firstChild.data=username
-  auth_dom.getElementsByTagName("password")[0].firstChild.data=password
-
-  resp = pysugarsync.conn.do_post(end_point,auth_dom.toxml(),{"content-type":"application/xml; charset=UTF-8"})
-  token = resp.info().getheader("Location")
-  resp.close()
-  return token
-
-def is_valid_token(token,method,url):
-  #print token,method,url
-  if token:
-    return token.startswith(end_point)
+def login(email,password,session=None):
+  if session:
+    pyacd.conn.session=session
   else:
-    if method=="POST" and url==pysugarsync.auth.end_point:
-      return True
-    else:
-      return False
+    pyacd.conn.session=Session()
+
+  end_point="https://www.amazon.com/clouddrive"
+  html=pyacd.do_get(url)
+
+  if email and password:
+    begin='<form name="signIn"'
+    end='</form>'
+    html=begin + html.split(begin,1)[1].split(end,1)[0] +end
+
+    parser=CustomHTMLParser()
+    parser.feed(html)
+    parser.close()
+
+    action=parser.action
+    params=parser.key_value.copy()
+
+    params["create"]=0
+    #params["x"]=0
+    #params["y"]=0
+    #params["metadata1"]=""
+    body=urllib.urlencode(params)
+    html=pyacd.do_post(action,body,{"Content-Type":"application/x-www-form-urlencoded"})
+
+  customer_id=html.split("customerId",1)[1]
+  customer_id=customer_id.split(">",1)[0]
+  customer_id=re.sub('.*value="','',customer_id)
+  customer_id=re.sub('".*','',customer_id)
+  session.customer_id=customer_id
+
+  username=html.split("customer_greeting",1)[1]
+  username=username.split("<",1)[0]
+  username=username.split(",")[1][1:]
+  username=re.sub(r'\..*','',username)
+  session.username=username
+
+  return session
 
 
 
-end_point = "http://www.amazon.com"
+
+class CustomHTMLParser(HTMLParser):
+  def __init__(self):
+    HTMLParser.__init__(self)
+    self.key_value={}
+    self.action=""
+
+  def handle_starttag(self, tag, attrs):
+    d=dict(attrs)
+    if tag=="form":
+      #print d
+      self.action=d.get("action","")
+    elif tag=='input':
+      if d.get('name'):
+        self.key_value[d.get('name')]=d.get('value','')
+  def handle_endtag(self, tag):
+    if tag=='input':
+      pass
+
 
 
 
@@ -78,6 +100,9 @@ class Session(object):
     self.customer_id=None
     self.cookies={}
     self._initializing=True
+    end_point = "http://www.amazon.com/"
+    pyacd.conn.do_get(end_point)
+    pyacd.conn.do_get(end_point)
     self._initializing=False
 
   def __repr__(self):
@@ -96,8 +121,10 @@ class Session(object):
     return (self.is_valid() && username && customer_id)
 
   def update_cookies(self,cookie_str):
-    self.cookies={}
+    #self.cookies={}
     for c in cookie_str.split(", "):
       if c.startswith("session-") or c.startswith("ubid-") or c.startswith("x-") or \
                                                           c.startswith("__")or c.startswith("at-"):
         cookies.update( dict( re.sub(";.*","",c).split("=") ) )
+
+
