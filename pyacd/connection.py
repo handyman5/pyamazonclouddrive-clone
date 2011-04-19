@@ -71,32 +71,36 @@ class Connection(object):
       raise PyAmazonCloudDriveError("unsupported scheme. %s"%scheme)
 
     hs={"Cookie":"; ".join( ["=".join(i) for i in self.session.cookies.items()] )}
-    if self.session.cookies.get(""):
-
-
+    if self.session.cookies.get("session-id"):
+      hs["x-amzn-SessionId"]=self.session.cookies.get("session-id=")
 
     if headers:
       hs.update(headers)
-    
-    req = request_class[method](url,body,hs)
+
+    path = url.split(host,1)[1]
+    conn.request(method,path,None,hs)
 
     if pysugarsync.debug_level:
       #print method,
       sys.stderr.write(method)
 
-    try:
-      resp = urllib2.urlopen(req)
-    except urllib2.HTTPError, e:
-      resp = e
+    resp = conn.getresponse()
 
-    if resp.code/100  != 200/100:
+    if 400< resp.status <599:
       sys.stderr.write(resp.read())
-      raise PySugarSyncError("response code is %d"%resp.code)
+      raise PyAmazonCloudDriveError("response code is %d"%resp.status)
 
     if pysugarsync.debug_level:
       #print "->",
       sys.stderr.write("->")
 
-    return resp
+    self.session.update_cookies(resp.getheader("Set-Cookie"))
+
+    if resp.getheader("Location"):
+      return self.do_get(resp.getheader("Location"),headers)
+
+    resp_body=resp.read()
+    conn.close()
+    return resp_body
 
 

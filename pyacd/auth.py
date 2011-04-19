@@ -77,6 +77,8 @@ class Session(object):
     self.username=None
     self.customer_id=None
     self.cookies={}
+    self._initializing=True
+    self._initializing=False
 
   def __repr__(self):
     return '<Session: %s>' % ",".join( [ k for k,v in self.cookies.items() ] )
@@ -85,10 +87,17 @@ class Session(object):
     return '<Session: %s>' % ",".join( [ k for k,v in self.cookies.items() ] )
     
   def is_valid(self):
-    return True
+    if self._initializing:
+      return True
+    else:
+      return True
 
   def is_logined(self):
     return (self.is_valid() && username && customer_id)
 
   def update_cookies(self,cookie_str):
-    pass
+    self.cookies={}
+    for c in cookie_str.split(", "):
+      if c.startswith("session-") or c.startswith("ubid-") or c.startswith("x-") or \
+                                                          c.startswith("__")or c.startswith("at-"):
+        cookies.update( dict( re.sub(";.*","",c).split("=") ) )
