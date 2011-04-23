@@ -29,13 +29,12 @@ from HTMLParser import HTMLParser
 import pyacd
 
 def login(email,password,session=None):
+  pyacd.conn.session=Session()
   if session:
-    pyacd.conn.session=session
-  else:
-    pyacd.conn.session=Session()
+    pyacd.conn.session.cookies.update(session.cookies)
 
   end_point="https://www.amazon.com/clouddrive"
-  html=pyacd.do_get(url)
+  html=pyacd.conn.do_get(end_point)
 
   if email and password:
     begin='<form name="signIn"'
@@ -54,7 +53,7 @@ def login(email,password,session=None):
     #params["y"]=0
     #params["metadata1"]=""
     body=urllib.urlencode(params)
-    html=pyacd.do_post(action,body,{"Content-Type":"application/x-www-form-urlencoded"})
+    html=pyacd.conn.do_post(action,body,{"Content-Type":"application/x-www-form-urlencoded"})
 
   customer_id=html.split("customerId",1)[1]
   customer_id=customer_id.split(">",1)[0]
@@ -95,11 +94,12 @@ class CustomHTMLParser(HTMLParser):
 
 
 class Session(object):
-  def __init__():
+  def __init__(self):
     self.username=None
     self.customer_id=None
     self.cookies={}
     self._initializing=True
+    pyacd.conn.session=self
     end_point = "http://www.amazon.com/"
     pyacd.conn.do_get(end_point)
     pyacd.conn.do_get(end_point)
@@ -118,13 +118,13 @@ class Session(object):
       return True
 
   def is_logined(self):
-    return (self.is_valid() && username && customer_id)
+    return (self.is_valid() and username and customer_id)
 
   def update_cookies(self,cookie_str):
     #self.cookies={}
     for c in cookie_str.split(", "):
       if c.startswith("session-") or c.startswith("ubid-") or c.startswith("x-") or \
                                                           c.startswith("__")or c.startswith("at-"):
-        cookies.update( dict( re.sub(";.*","",c).split("=") ) )
+        self.cookies.update( dict( [re.sub(";.*","",c).split("="),] ) )
 
 

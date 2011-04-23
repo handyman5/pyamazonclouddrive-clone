@@ -31,6 +31,3 @@ from pyacd.connection import Connection
 debug_level=0
 conn=Connection()
 
-def set_session(session):
-  conn.session=session
-

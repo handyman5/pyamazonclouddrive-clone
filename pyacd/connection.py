@@ -37,16 +37,16 @@ class Connection(object):
   def __init__(self):
     self.session=None
 
-  def do_get(self,url,headers):
+  def do_get(self,url,headers=None):
     return self._do_request("GET",url,None,headers)
 
-  def do_delete(self,url,headers):
+  def do_delete(self,url,headers=None):
     return self._do_request("DELETE",url,None,headers)
 
-  def do_post(self,url,body,headers):
+  def do_post(self,url,body,headers=None):
     return self._do_request("POST",url,body,headers)
 
-  def do_put(self,url,body,headers):
+  def do_put(self,url,body,headers=None):
     return self._do_request("PUT",url,body,headers)
 
   def _do_request(self,method,url,body,headers):
@@ -61,7 +61,7 @@ class Connection(object):
     elif not self.session.is_valid():
       raise PyAmazonCloudDriveError("session is invalid. %s"%self.session)
 
-    scheme,host = urllib2.urlparse.urlparse(url)[:1]
+    scheme,host = urllib2.urlparse.urlparse(url)[:2]
 
     if scheme=='http':
       conn=httplib.HTTPConnection(host)
@@ -80,7 +80,7 @@ class Connection(object):
     path = url.split(host,1)[1]
     conn.request(method,path,None,hs)
 
-    if pysugarsync.debug_level:
+    if pyacd.debug_level:
       #print method,
       sys.stderr.write(method)
 
@@ -90,7 +90,7 @@ class Connection(object):
       sys.stderr.write(resp.read())
       raise PyAmazonCloudDriveError("response code is %d"%resp.status)
 
-    if pysugarsync.debug_level:
+    if pyacd.debug_level:
       #print "->",
       sys.stderr.write("->")
 
