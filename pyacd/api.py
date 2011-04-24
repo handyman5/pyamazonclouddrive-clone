@@ -90,8 +90,8 @@ def download_by_id(object_id,attachment=0):
     "downloadById":object_id,
     "attachment":attachment
   }
-  end_point=pyacd.api_root[:-1*"/api/"]+"?"+urllib.urlencode(params)
-  print end_point
+  end_point=pyacd.api_root[:-1*len("/api/")]+"?"+urllib.urlencode(params)
+  #print end_point
   return pyacd.conn.do_get(end_point)
 
 def empty_recycle_bin():
