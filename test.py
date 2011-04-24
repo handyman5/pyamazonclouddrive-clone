@@ -28,74 +28,23 @@ from cStringIO import StringIO
 from ConfigParser import SafeConfigParser
 import time
 
-import pysugarsync
-pysugarsync.debug_level=2
+import pyacd
+pyacd.debug_level=2
 
-config_file="../pysugarsync.ini"
+config_file="../pyacd.ini"
 
 parser=SafeConfigParser()
 parser.read(config_file)
 credentials=dict(parser.items("Credentials"))
 
-username=credentials.get("username",None)
+email=credentials.get("email",None)
 password=credentials.get("password",None)
-access_key=credentials.get("accesskey",None)
-private_access_key=credentials.get("privateaccesskey",None)
+print "**Config**"
+print "email->",email
+print "password->",password
+print "*"*20
 
-user=None
-token=None
-
-class ActionTest(unittest.TestCase):
-  def setUp(self):
-    pass
-
-  def tearDown(self):
-    pass
-
-  def testFileAction(self):
-    base_folder = pysugarsync.get_base_folder(user.magic_briefcase)
-    sys.stderr.write("%s->"%base_folder.name)
-
-    subfolder="dir_%d"%int(time.time())
-    base_folder.create_subfolder(subfolder)
-
-    for folder in base_folder.subfolders():
-      if folder.name==subfolder:
-        sys.stderr.write("%s->"%folder.name)
-        folder.upload_file("README")
-
-  def testFolderAction(self):
-    base_folder = pysugarsync.get_base_folder(user.magic_briefcase)
-    sys.stderr.write("%s->"%base_folder.name)
-
-    subfolder="dir_%d"%int(time.time())
-    base_folder.create_subfolder(subfolder)
-
-    for folder in base_folder.subfolders():
-      if folder.name==subfolder:
-        sys.stderr.write("%s->"%folder.name)
-        #folder.upload_file("README")
-        folder.rename("dir_renamed")
-        sys.stderr.write("%s->"%folder.name)
-        folder.delete()
-        #print f.get_folders()
-        #print f.get_files()
-        
-class UserTest(unittest.TestCase):
-  def setUp(self):
-    pass
-    
-  def tearDown(self):
-    pass
-
-  def testUserRepresentation(self):
-    global user
-    user = pysugarsync.get_user()
-    self.assertEqual(user.username,username,"username is invalid. %s"%user.username)
-    self.assertNotEqual(user.nickname,None,"nickname is None")
-    self.assertNotEqual(user.usage,None,"usage is None")
-    self.assertNotEqual(user.limit,None,"limit is None")
-
+session=None
 
 class AuthTest(unittest.TestCase):
   def setUp(self):
@@ -104,27 +53,74 @@ class AuthTest(unittest.TestCase):
   def tearDown(self):
     pass
 
-  def testRetrieveToken(self):
-    global token
-    token=pysugarsync.retrieve_token(
-        username=username,
-        password=password,
-        access_key=access_key,
-        private_access_key=private_access_key
-    )
-    self.assertTrue(pysugarsync.is_valid_token(token,"",""),"invalid url %s"%token)
+  def testLogin(self):
+    global session
+    session=pyacd.login(email,password)
+    self.assertTrue(session.is_valid(),"invalid session %s"%session)
+    self.assertTrue(session.is_logined(),"not logined %s"%session)
+    self.assertNotEqual(session.username,None,"username is None %s"%session)
+    self.assertNotEqual(session.customer_id,None,"customer_id is None %s"%session)
+    sys.stderr.write(str(session))
 
-  def testSetToken(self):
-    pysugarsync.set_token(token)
+"""
+  def testLoginWithNoneEmail(self):
+    global session
+    try:
+      session=pyacd.login(None,password)
+    except TypeError,e:
+      pass
 
+  def testLoginWithNonePassword(self):
+    global session
+    try:
+      session=pyacd.login(email,None)
+    except TypeError,e:
+      pass
+
+  def testLoginWithNoneArgs(self):
+    global session
+    try:
+      session=pyacd.login(None,None,None)
+    except TypeError,e:
+      pass
+
+  def testReloginWithSession(self):
+    global session
+    session=pyacd.login(session=session)
+    self.assertTrue(session.is_valid(),"invalid session %s"%session)
+    self.assertTrue(session.is_logined(),"not logined %s"%session)
+    self.assertNotEqual(session.username,None,"username is None %s"%session)
+    self.assertNotEqual(session.customer_id,None,"customer_id is None %s"%session)
+"""
     
+class ApiTest(unittest.TestCase):
+  def setUp(self):
+    pass
+
+  def tearDown(self):
+    pass
+
+  def testUserStorage(self):
+    user_storage = pyacd.get_user_storage()
+    self.assertEqual(user_storage.total_space,user_storage.
+        used_space+user_storage.free_space,"total /= used+free %s"%user_storage)
+    sys.stderr.write(str(user_storage))
+
+  def testSubscriptionProblem(self):
+    subscription_problem=pyacd.get_subscription_problem()
+    sys.stderr.write(str(subscription_problem))
+
+  def testInfoByPathAndById(self):
+    info_by_path=pyacd.get_info_by_path("/")
+    sys.stderr.write(str(info_by_path))
+    info_by_id=pyacd.get_info_by_id(info_by_path.object_id)
+    sys.stderr.write(str(info_by_path))
 
 def main():
   suites=[]
   
   suites.append(unittest.TestLoader().loadTestsFromTestCase(AuthTest))
-  suites.append(unittest.TestLoader().loadTestsFromTestCase(UserTest))
-  suites.append(unittest.TestLoader().loadTestsFromTestCase(ActionTest))
+  suites.append(unittest.TestLoader().loadTestsFromTestCase(ApiTest))
 
   runner = unittest.TextTestRunner(verbosity=2)
 
