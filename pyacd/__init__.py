@@ -23,11 +23,19 @@
 # 
 
 
-from pyacd.exception import PyAmazonCloudDriveError
-from pyacd.auth import login
-
+from pyacd.exception import *
 from pyacd.connection import Connection
+
+from pyacd.auth import login
+from pyacd.api import *
+
+import types
+import status
 
 debug_level=0
 conn=Connection()
+api_root="https://www.amazon.com/clouddrive/api/"
 
+def get_session():
+  return conn.session
+  

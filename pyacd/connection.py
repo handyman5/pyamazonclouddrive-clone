@@ -23,8 +23,6 @@
 # 
 
 
-
-
 import sys
 import urllib2
 import httplib
@@ -72,16 +70,23 @@ class Connection(object):
 
     hs={"Cookie":"; ".join( ["=".join(i) for i in self.session.cookies.items()] )}
     if self.session.cookies.get("session-id"):
-      hs["x-amzn-SessionId"]=self.session.cookies.get("session-id=")
+      hs["x-amzn-SessionId"]=self.session.cookies.get("session-id")
 
     if headers:
       hs.update(headers)
 
     path = url.split(host,1)[1]
-    conn.request(method,path,None,hs)
+    conn.request(method,path,body,hs)
+
+
+#    print method
+#    print path
+#    print body
+#    print hs
+#    print "*"*20
+
 
     if pyacd.debug_level:
-      #print method,
       sys.stderr.write(method)
 
     resp = conn.getresponse()
@@ -91,10 +96,10 @@ class Connection(object):
       raise PyAmazonCloudDriveError("response code is %d"%resp.status)
 
     if pyacd.debug_level:
-      #print "->",
       sys.stderr.write("->")
 
-    self.session.update_cookies(resp.getheader("Set-Cookie"))
+    if resp.getheader("Set-Cookie"):
+      self.session.update_cookies(resp.getheader("Set-Cookie"))
 
     if resp.getheader("Location"):
       return self.do_get(resp.getheader("Location"))
