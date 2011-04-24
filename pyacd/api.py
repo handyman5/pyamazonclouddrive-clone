@@ -34,17 +34,207 @@ from apiresponse import *
 
 def _error_check(resp_json):
   if resp_json.get("Error"):
-    print end_point
     raise pyacd.PyAmazonCloudDriveApiException(resp_json.get("Error"))
+
+def upload(end_point,parameters,filename,filedata):
+  params=parameters.copy()
+  params["Filename"]="sample.txt"
+  pyacd.post_multipart(end_point,params,{filename:filedata})
+
+def complete_file_upload_by_id(object_id,storage_key):
+  session = pyacd.get_session()
+  if not session.is_logined():
+    raise pyacd.PyAmazonCloudDriveError("Not logined %s"%session)
+
+  operation="completeFileUploadById"
+  params={
+    "_":int(time.time()),
+    "Operation":operation,
+    "customerId":session.customer_id,
+    "ContentType":"JSON",
+    "objectId":object_id,
+    "storageKey":storage_key,
+  }
+  end_point=pyacd.api_root+"?"+urllib.urlencode(params)
+  resp_json=json.loads(pyacd.conn.do_get(end_point))
+  _error_check(resp_json)
+
+def get_upload_url_by_id(object_id,size,method="POST"):
+  session = pyacd.get_session()
+  if not session.is_logined():
+    raise pyacd.PyAmazonCloudDriveError("Not logined %s"%session)
+
+  operation="getUploadUrlById"
+  params={
+    "_":int(time.time()),
+    "Operation":operation,
+    "customerId":session.customer_id,
+    "ContentType":"JSON",
+    "objectId":object_id,
+    "size":size,
+    "method":method
+  }
+  end_point=pyacd.api_root+"?"+urllib.urlencode(params)
+  resp_json=json.loads(pyacd.conn.do_get(end_point))
+  _error_check(resp_json)
+
+  result=resp_json.get(operation+"Response").get(operation+"Result")
+  return UploadUrl(result)
+
+def download_by_id(object_id,attachment=0):
+  session = pyacd.get_session()
+  if not session.is_logined():
+    raise pyacd.PyAmazonCloudDriveError("Not logined %s"%session)
+
+  params={
+    "downloadById":object_id,
+    "attachment":attachment
+  }
+  end_point=pyacd.api_root+"?"+urllib.urlencode(params)
+  return pyacd.conn.do_get(end_point)
+
+def empty_recycle_bin():
+  session = pyacd.get_session()
+  if not session.is_logined():
+    raise pyacd.PyAmazonCloudDriveError("Not logined %s"%session)
+
+  operation="emptyRecycleBin"
+  params={
+    "_":int(time.time()),
+    "Operation":operation,
+    "customerId":session.customer_id,
+    "ContentType":"JSON",
+  }
+  end_point=pyacd.api_root+"?"+urllib.urlencode(params)
+  resp_json=json.loads(pyacd.conn.do_get(end_point))
+  _error_check(resp_json)
+
+def recycle_bulk_by_id(source_inclusion_ids=[]):
+  _operate2_bulk_by_id("recycleBulkById",source_inclusion_ids)
+
+def remove_bulk_by_id(source_inclusion_ids=[]):
+  _operate2_bulk_by_id("removeBulkById",source_inclusion_ids)
+
+def _operate2_bulk_by_id(operation,source_inclusion_ids):
+  session = pyacd.get_session()
+  if not session.is_logined():
+    raise pyacd.PyAmazonCloudDriveError("Not logined %s"%session)
+
+  if len(source_inclusion_ids)==0:
+    raise pyacd.PyAmazonCloudDriveError("No source ids %s"%str(source_inclusion_ids))
+
+  params={
+    "_":int(time.time()),
+    "Operation":operation,
+    "customerId":session.customer_id,
+    "ContentType":"JSON",
+  }
+  params.update(dict([["inclusionIds.member.%d"%(i+1),source_inclusion_ids[i]] for i in range(len(source_inclusion_ids))]))
+  end_point=pyacd.api_root+"?"+urllib.urlencode(params)
+  resp_json=json.loads(pyacd.conn.do_get(end_point))
+  _error_check(resp_json)
     
-    
-    
-def list_by_id(objectId,ordering=None,next_token=0,max_items=None,filter=None):
+def _operate1_bulk_by_id(operation,destination_parent_id,source_inclusion_ids,conflict_resolution):
+  session = pyacd.get_session()
+  if not session.is_logined():
+    raise pyacd.PyAmazonCloudDriveError("Not logined %s"%session)
+
+  if len(source_inclusion_ids)==0:
+    raise pyacd.PyAmazonCloudDriveError("No source ids %s"%str(source_inclusion_ids))
+
+  params={
+    "_":int(time.time()),
+    "Operation":operation,
+    "customerId":session.customer_id,
+    "ContentType":"JSON",
+    "destinationParentId":destination_parent_id,
+    "conflictResolution":conflict_resolution,
+  }
+  params.update(dict([["sourceInclusionIds.member.%d"%(i+1),source_inclusion_ids[i]] for i in range(len(source_inclusion_ids))]))
+  end_point=pyacd.api_root+"?"+urllib.urlencode(params)
+  resp_json=json.loads(pyacd.conn.do_get(end_point))
+  _error_check(resp_json)
+
+def move_bulk_by_id(destination_parent_id,source_inclusion_ids=[],conflict_resolution="MERGE"):
+  _operate1_bulk_by_id("moveBulkById",destination_parent_id,source_inclusion_ids,"MERGE")
+
+def copy_bulk_by_id(destination_parent_id,source_inclusion_ids=[],conflict_resolution="RENAME"):
+  _operate1_bulk_by_id("copyBulkById",destination_parent_id,source_inclusion_ids,"RENAME")
+
+def move_by_id(source_id,destination_parent_id,destination_name,overwrite=False):
+  session = pyacd.get_session()
+  if not session.is_logined():
+    raise pyacd.PyAmazonCloudDriveError("Not logined %s"%session)
+
+  operation="moveById"
+  params={
+    "_":int(time.time()),
+    "Operation":operation,
+    "customerId":session.customer_id,
+    "ContentType":"JSON",
+    "sourceId":source_id,
+    "destinationParentId":destination_parent_id,
+    "destinationName":destination_name,
+    "overwrite":"true" if overwrite else "false"
+  }
+  end_point=pyacd.api_root+"?"+urllib.urlencode(params)
+  resp_json=json.loads(pyacd.conn.do_get(end_point))
+  _error_check(resp_json)
+
+
+def create_by_path(path,name,Type=pyacd.types.FILE,conflict_resolution="RENAME",overwrite=False,autoparent=True):
+  session = pyacd.get_session()
+  if not session.is_logined():
+    raise pyacd.PyAmazonCloudDriveError("Not logined %s"%session)
+
+  operation="createByPath"
+  params={
+    "_":int(time.time()),
+    "Operation":operation,
+    "customerId":session.customer_id,
+    "ContentType":"JSON",
+    "path":path,
+    "name":name,
+    "type":Type,
+    "conflictResolution":conflict_resolution,
+    "overwrite":"true" if overwrite else "false",
+    "autoparent":"true" if autoparent else "false"
+  }
+  end_point=pyacd.api_root+"?"+urllib.urlencode(params)
+  resp_json=json.loads(pyacd.conn.do_get(end_point))
+  _error_check(resp_json)
+  result=resp_json.get(operation+"Response").get(operation+"Result")
+  return Info(result.get("info"))
+
+def create_by_id(parent_id,name,Type=pyacd.types.FOLDER,overwrite=False):
+  session = pyacd.get_session()
+  if not session.is_logined():
+    raise pyacd.PyAmazonCloudDriveError("Not logined %s"%session)
+
+  operation="createById"
+  params={
+    "_":int(time.time()),
+    "Operation":operation,
+    "customerId":session.customer_id,
+    "ContentType":"JSON",
+    "parentId":parent_id,
+    "name":name,
+    "type":Type,
+    "overwrite":"true" if overwrite else "false"
+  }
+  end_point=pyacd.api_root+"?"+urllib.urlencode(params)
+  resp_json=json.loads(pyacd.conn.do_get(end_point))
+  _error_check(resp_json)
+  result=resp_json.get(operation+"Response").get(operation+"Result")
+  return Info(result.get("info"))
+
+
+def list_by_id(object_id,ordering=None,next_token=0,max_items=None,Filter=None):
   """
   ordering examles.
     keyName
     type,keyName,creationDate
-  filter examles.
+  Filter examles.
     type = "FOLDER" and hidden = false
     type != "RECYCLE" and status != "PENDING" and hidden = false
   """
@@ -58,23 +248,29 @@ def list_by_id(objectId,ordering=None,next_token=0,max_items=None,filter=None):
     "Operation":operation,
     "customerId":session.customer_id,
     "ContentType":"JSON",
-    "query":query
+    "objectId":object_id,
+    "nextToken":next_token
   }
+  if ordering:params["ordering"]=ordering
+  if max_items:params["maxItems"]=max_items
+  if Filter:params["filter"]=Filter
   
   end_point=pyacd.api_root+"?"+urllib.urlencode(params)
   resp_json=json.loads(pyacd.conn.do_get(end_point))
   _error_check(resp_json)
   result=resp_json.get(operation+"Response").get(operation+"Result")
-  return Metadata(result)
+  return List(result)
 
 
 def select_metadata(query):
   """
   query examles.
-    select count(*) from object where hidden != true and parentObjectId="xxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" and status != "PENDING" and type != "RECYCLE" and type = "FOLDER"
-    select count(*) from object where hidden != true and parentObjectId="xxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" and status != "PENDING" and type != "RECYCLE"
-    select distinct parentObjectId from object where parent.parentObjectId="xxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" and type != "RECYCLE" and hidden = false and status != "PENDING"
-    select distinct parentObjectId from object where parent.parentObjectId="xxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" and type = "FOLDER" and hidden = false
+    select count(*) from object where hidden != true and parentObjectId='xxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx' and status != 'PENDING' and type != 'RECYCLE' and type = "FOLDER"
+    select count(*) from object where hidden != true and parentObjectId='xxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx' and status != 'PENDING' and type != 'RECYCLE'
+    select distinct parentObjectId from object where parent.parentObjectId='xxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx' and type != "RECYCLE" and hidden = false and status != "PENDING"
+    select distinct parentObjectId from object where parent.parentObjectId='xxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx' and type = 'FOLDER' and hidden = false
+    select creationDate, extension, objectId, keyName, purchaseDate, parentObjectId, status, name, lastModifiedDate, version, type, size, parent.name from object where purchaseDate = null and type='FILE' and hidden=false and status='AVAILABLE' order by creationDate DESC,keyName limit 0, 2
+    select creationDate, extension, objectId, keyName, purchaseDate, parentObjectId, status, name, lastModifiedDate, version, type, size, parent.name from object where type='FILE' and hidden=false and status='AVAILABLE' order by creationDate DESC,keyName limit 0, 2
   """
   session = pyacd.get_session()
   if not session.is_logined():

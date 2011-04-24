@@ -27,6 +27,7 @@ import unittest
 from cStringIO import StringIO
 from ConfigParser import SafeConfigParser
 import time
+import xml.dom.minidom
 
 import pyacd
 pyacd.debug_level=2
@@ -60,7 +61,7 @@ class AuthTest(unittest.TestCase):
     self.assertTrue(session.is_logined(),"not logined %s"%session)
     self.assertNotEqual(session.username,None,"username is None %s"%session)
     self.assertNotEqual(session.customer_id,None,"customer_id is None %s"%session)
-    sys.stderr.write(str(session))
+    #sys.stderr.write(str(session))
 
 """
   def testLoginWithNoneEmail(self):
@@ -101,20 +102,74 @@ class ApiTest(unittest.TestCase):
     pass
 
   def testUserStorage(self):
-    user_storage = pyacd.get_user_storage()
+    user_storage = pyacd.api.get_user_storage()
     self.assertEqual(user_storage.total_space,user_storage.
         used_space+user_storage.free_space,"total /= used+free %s"%user_storage)
-    sys.stderr.write(str(user_storage))
+    #sys.stderr.write(str(user_storage))
 
   def testSubscriptionProblem(self):
-    subscription_problem=pyacd.get_subscription_problem()
-    sys.stderr.write(str(subscription_problem))
+    subscription_problem=pyacd.api.get_subscription_problem()
+    #sys.stderr.write(str(subscription_problem))
 
   def testInfoByPathAndById(self):
-    info_by_path=pyacd.get_info_by_path("/")
-    sys.stderr.write(str(info_by_path))
-    info_by_id=pyacd.get_info_by_id(info_by_path.object_id)
-    sys.stderr.write(str(info_by_path))
+    info_by_path=pyacd.api.get_info_by_path("/")
+    #sys.stderr.write(str(info_by_path))
+    info_by_id=pyacd.api.get_info_by_id(info_by_path.object_id)
+    #sys.stderr.write(str(info_by_path))
+    self.assertEqual(info_by_path.name,info_by_id.name,"different from byPath(%s) and byId(%s)"%
+                    (info_by_path,info_by_id))
+
+  def testListById(self):
+    info=pyacd.api.get_info_by_path("/")
+    pyacd.api.list_by_id(info.object_id)
+
+  def testFolder_Create_Rename_Copy_Recycle_Remove(self):
+    root=pyacd.api.get_info_by_path("/")
+    old_name="create_%d"%int(time.time())
+    new_name=old_name.replace("create","rename")
+    
+    # folder1 create(old_name) -> rename(new_name)
+    folder1=pyacd.api.create_by_id(root.object_id,old_name)
+    pyacd.api.move_by_id(folder1.object_id,root.object_id,new_name)
+
+    # folder2 create(old_name) -> copy to new_name/ move to new_name/
+    folder2=pyacd.api.create_by_id(root.object_id,old_name)
+    pyacd.api.copy_bulk_by_id(folder1.object_id,[folder2.object_id,])
+    pyacd.api.move_bulk_by_id(folder1.object_id,[folder2.object_id,])
+
+    # folder1 recycle -> remove
+    pyacd.api.recycle_bulk_by_id([folder1.object_id,])
+    pyacd.api.remove_bulk_by_id([folder1.object_id,])
+
+  def testEmptyRecycleBin(self):
+    pyacd.api.empty_recycle_bin()
+
+  def testFile_Create_Upload_Download(self):
+    filename = "test_%d.txt"%int(time.time())
+    filedata = "12345"
+    
+    # file1 create
+    file1 = pyacd.api.create_by_path("/",filename)
+
+    # get upload_url
+    upload_url = pyacd.api.get_upload_url_by_id(file1.object_id,len(filedata))
+    storage_key=upload_url.storage_key
+    object_id=upload_url.object_id
+    end_point=upload_url.http_request.end_point
+    parameters=upload_url.http_request.parameters
+
+    # upload file
+    pyacd.api.upload(end_point,parameters,filename,filedata)
+
+    # completeing file
+    pyacd.api.complete_file_upload_by_id(object_id,storage_key)
+
+    # download file
+    download_data=pyacd.api.download_by_id(object_id)
+    
+    self.assertEqual(filedata,download_data,"different from upload and download")
+    
+
 
 def main():
   suites=[]

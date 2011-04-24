@@ -23,6 +23,50 @@
 # 
 
 
+class UploadUrl(object):
+  def __init__(self,result_json):
+    self.object_id=result_json.get("objectId")
+    self.path=result_json.get("path")
+    self.storage_key=result_json.get("storageKey")
+    self.http_request=HttpRequest(result_json.get("httpRequest"))
+    
+  def __repr__(self):
+    return '<UploadUrl: %s>' % (self.object_id)
+
+  def __str__(self):
+    return '<UploadUrl: %s>' % (self.object_id)
+
+class HttpRequest(object):
+  def __init__(self,result_json):
+    self.headers=result_json.get("headers")
+    self.end_point=result_json.get("endpoint")
+    self.method=result_json.get("methodName")
+    self.resource_path=result_json.get("resourcePath")
+    self.parameters=result_json.get("parameters")
+    #print self.parameters.keys()
+    
+    
+  def __repr__(self):
+    return '<HttpRequest: %s,%s>' % (self.method,self.end_point)
+
+  def __str__(self):
+    return '<HttpRequest: %s,%s>' % (self.method,self.end_point)
+
+
+class List(object):
+  def __init__(self,result_json):
+    self.next_token=result_json.get("nextToken")
+    self.parent_modified=result_json.get("parentLastUpdated")
+    self.objects=[]
+    for obj in result_json.get("objects"):
+      self.objects.append(Info(obj))
+
+  def __repr__(self):
+    return '<List: includes %d objects)>' % (len(self.objects))
+
+  def __str__(self):
+    return '<List: includes %d objects)>' % (len(self.objects))
+
 class Metadata(object):
   def __init__(self,result_json):
     self.items=result_json.get("items")
@@ -35,30 +79,53 @@ class Metadata(object):
  
 class Info(object):
   def __init__(self,result_json):
-    self.__type=result_json.get("type")
-    self.path=result_json.get("path")
-    self.name=result_json.get("keyName")
-    self._type=result_json.get("extension")
-    self.fullpath=self.path+self.name
-    self.object_id=result_json.get("objectId")
     self.parent_object_id=result_json.get("parentObjectId")
-    self.created=result_json.get("creationDate")
-    self.modified=result_json.get("lastUpdatedDate")
     self.status=result_json.get("status")
+    self.purchased=result_json.get("purchaseDate")
+    self.size=result_json.get("size")
+    self.object_id=result_json.get("objectId")
+    self.storage_system=result_json.get("storageSystem")
     self.version=result_json.get("version")
     self.hidden=result_json.get("hidden")
-    self._type=result_json.get("size")
-    self._type=result_json.get("md5")
-    
-  def get_type(self):
-    return self.__type
+    self.md5=result_json.get("md5")
+    self.Type=result_json.get("type")
+    self.name=result_json.get("name")
+    self.path=result_json.get("path")
+    if len(self.name) and self.path:
+      self.path=self.path[:-1*len(self.name)]
+    self.created=result_json.get("creationDate")
+    self.parent_path_before_recycle=result_json.get("parentPathBeforeRecycle")
+    self.modified=result_json.get("lastUpdatedDate")
+    # Unknown udage
+    # keyName,asin,metadata,orderId,permissions,extension,localFilePath
+
+    if self.storage_system:
+      self.storage_system=StorageSystem(self.storage_system)
+    #if self.purchased:
+    #  time.asctime(time.localtime(self.purchased))
+    #if self.created:
+    #  time.asctime(time.localtime(self.purchased))
+    #if self.modified:
+    #  time.asctime(time.localtime(self.purchased))
 
   def __repr__(self):
-    return '<Info: %s (type=%s,status=%s,version=%d)>' % (self.fullpath,self.get_type(),self.status,self.version)
+    return '<Info: %s%s (type=%s,status=%s,version=%d)>' % (self.path,self.name,self.Type,self.status,self.version)
 
   def __str__(self):
-    return '<Info: %s (type=%s,status=%s,version=%d)>' % (self.fullpath,self.get_type(),self.status,self.version)
+    return '<Info: %s%s (type=%s,status=%s,version=%d)>' % (self.path,self.name,self.Type,self.status,self.version)
 
+class StorageSystem(object):
+  def __init__(self,result_json):
+     self.encrypted=result_json.get("encrypted")
+     self.storage_key=result_json.get("storageKey")
+     self.payer_id=result_json.get("payerId") 
+     self.Type=result_json.get("type") 
+    
+  def __repr__(self):
+    return '<StrageSystem: (encrypted=%s,player_id=%s,type=%d)>' % (self.encrypted,self.payer_id,self.Type)
+
+  def __str__(self):
+    return '<StrageSystem: (encrypted=%s,player_id=%s,type=%d)>' % (self.encrypted,self.payer_id,self.Type)
     
 class UserStorage(object):
   def __init__(self,result_json):

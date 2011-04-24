@@ -25,12 +25,15 @@
 
 from pyacd.exception import *
 from pyacd.connection import Connection
+from pyacd.multipart import post_multipart
 
 from pyacd.auth import login
-from pyacd.api import *
 
 import types
 import status
+
+import api
+
 
 debug_level=0
 conn=Connection()
