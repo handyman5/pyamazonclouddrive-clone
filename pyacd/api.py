@@ -38,7 +38,7 @@ def _error_check(resp_json):
 
 def upload(end_point,parameters,filename,filedata):
   params=parameters.copy()
-  params["Filename"]="sample.txt"
+  params["Filename"]=filename
   pyacd.post_multipart(end_point,params,{filename:filedata})
 
 def complete_file_upload_by_id(object_id,storage_key):
