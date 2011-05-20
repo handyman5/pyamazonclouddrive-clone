@@ -14,7 +14,10 @@ def post_multipart(url, fields, files):
     method="POST"
     content_type, body = encode_multipart_formdata(fields, files)
     #print body
-    hs={'content-type': content_type,'content-length': len(body)}
+
+    # Issue 1
+    # http://code.google.com/p/pyamazonclouddrive/issues/detail?id=1
+    hs={'content-type': content_type,'content-length': str(len(body))}
 
     scheme,host = urllib2.urlparse.urlparse(url)[:2]
 
@@ -69,7 +72,11 @@ def encode_multipart_formdata(fields, files):
         L.append(filedata)
     L.append('--' + BOUNDARY + '--')
     L.append('')
-    body = CRLF.join(L)
+
+    # Issue 1
+    # http://code.google.com/p/pyamazonclouddrive/issues/detail?id=1
+    body = CRLF.join([x if type(x)==str else str(x) for x in L])
+
     content_type = 'multipart/form-data; boundary=%s' % BOUNDARY
     return content_type, body
 
