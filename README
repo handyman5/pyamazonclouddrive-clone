@@ -1,6 +1,6 @@
-PyAmazonCloudDrive (pyacd) is 3rd-party implementation of accessing 
-"Amazon Cloud Drive" with Python. This is just an experimental project.
+PyAmazonCloudDrive? (pyacd) is 3rd-party Python library for accessing "Amazon Cloud Drive".
 
+Now this is just an experimental project, but a GOAL is a few line upload-download like "boto".
 
 
 
