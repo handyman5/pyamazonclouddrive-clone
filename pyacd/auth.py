@@ -60,18 +60,21 @@ def login(email=None,password=None,session=None):
     body=urllib.urlencode(params)
     html=pyacd.conn.do_post(action,body,{"Content-Type":"application/x-www-form-urlencoded"})
 
-  customer_id=html.split("customerId",1)[1]
-  customer_id=customer_id.split(">",1)[0]
-  customer_id=re.sub('.*value="','',customer_id)
-  customer_id=re.sub('".*','',customer_id)
-  pyacd.conn.session.customer_id=customer_id
+  try:
+    customer_id=html.split("customerId",1)[1]
+    customer_id=customer_id.split(">",1)[0]
+    customer_id=re.sub('.*value="','',customer_id)
+    customer_id=re.sub('".*','',customer_id)
+    pyacd.conn.session.customer_id=customer_id
 
-  username=html.split("customer_greeting",1)[1]
-  username=username.split("<",1)[0]
-  username=username.split(",")[1][1:]
-  username=re.sub(r'\..*','',username)
-  pyacd.conn.session.username=username
-
+    username=html.split("customer_greeting",1)[1]
+    username=username.split("<",1)[0]
+    username=username.split(",")[1][1:]
+    username=re.sub(r'\..*','',username)
+    pyacd.conn.session.username=username
+  except:
+    pass
+    
   return pyacd.conn.session
 
 

@@ -25,7 +25,7 @@
 # 
 """
 administrator@Tualatin ~/svn/pyacd $ ./acdupload.py --help
-Usage: acdupload.py [Options] file1 file2 ...
+Usage: acdupload.py -e EMAIL -p PASSWORD [-q] [-v] [-d PATH] file1 file2 ...
 
 Options:
   --version             show program's version number and exit
@@ -36,14 +36,16 @@ Options:
                         password for Amazon
   -v, --verbose         show debug infomation
   -q, --quiet           quiet mode
+  -d PATH, --destination=PATH
+                        upload path [default: /]
 
-This command upload files to root(/) of your Amazon Cloud Drive. If you have
-same named file in root(/), uploading file is renamed automatically. (e.g.
-'test.mp3' -> 'test (2).mp3')
+This command uploads file(s) to your Amazon Cloud Drive. If there is same
+named file, uploading file is renamed automatically. (e.g. 'test.mp3' -> 'test
+(2).mp3')
 
 administrator@Tualatin ~/svn/pyacd $ ./acdupload.py -e someone@example.com -p xxxx ~/test.jpg 
 Logining to Amazon.com ... Done
-Uploading test.jpg ... Done
+Uploading test.jpg to / ... Done
 """
 
 import sys
@@ -52,10 +54,10 @@ from optparse import OptionParser
 
 import pyacd
 
-parser=OptionParser(epilog="This command upload files to root(/) of your Amazon Cloud Drive. "+
-                            "If you have same named file in root(/), "+
-                            "uploading file is renamed automatically. (e.g. 'test.mp3' -> 'test (2).mp3')",
-                    usage="%prog [Options] file1 file2 ...",version="%prog 0.1")
+parser=OptionParser(epilog="This command uploads file(s) to your Amazon Cloud Drive. "+
+                            "If there is same named file, uploading file is renamed "+
+                            "automatically. (e.g. 'test.mp3' -> 'test (2).mp3')",
+                    usage="%prog -e EMAIL -p PASSWORD [-q] [-v] [-d PATH] file1 file2 ...",version="%prog 0.1")
 
 parser.add_option("-e","--email",dest="email",action="store",default=None,
                   help="email address for Amazon")
@@ -65,6 +67,8 @@ parser.add_option("-v","--verbose",dest="verbose",action="store_true",default=Fa
                   help="show debug infomation")
 parser.add_option("-q","--quiet",dest="quiet",action="store_true",default=False,
                   help="quiet mode")
+parser.add_option("-d","--destination",dest="path",action="store",default="/",
+                  help="upload path [default: %default]")
 
 def main():
   opts,args=parser.parse_args(sys.argv[1:])
@@ -101,14 +105,28 @@ def main():
     sys.stderr.write("Unexpected error occured.\n")
     sys.exit(2)
   elif not session.is_valid():
-    sys.stderr.write("Session is invalid.\n%s"%session)
+    sys.stderr.write("Session is invalid.\n%s\n"%session)
     sys.exit(2)
   elif not session.is_logined():
-    sys.stderr.write("Login failed.\n%s"%session)
+    sys.stderr.write("Login failed.\n%s\n"%session)
     sys.exit(2)
 
   if not opts.quiet:
     sys.stderr.write("Done\n")
+    
+  # Check destination
+  path=opts.path
+  if path[0]!='/':path='/'+path
+  if path[-1]!='/':path=path+'/'
+  try:
+    dest = pyacd.api.get_info_by_path(path)
+    if dest.Type == pyacd.types.FILE:
+      sys.stderr.write('"%s" is file\n'%path)
+      sys.exit(2)
+  except pyacd.PyAmazonCloudDriveApiException,e:
+    sys.stderr.write('"%s"\n'%e.message)
+    sys.exit(2)
+
 
   for file in args:
     filename = os.path.basename(file)
@@ -117,12 +135,12 @@ def main():
     f.close()
 
     if not opts.quiet:
-      sys.stderr.write("Uploading %s ... "%filename)
+      sys.stderr.write("Uploading %s to %s ... "%(filename,path))
 
     # create file
     if opts.verbose:
       sys.stderr.write("create ")
-    fileobj = pyacd.api.create_by_path("/",filename)
+    fileobj = pyacd.api.create_by_path(path,filename)
     if opts.verbose:
       sys.stderr.write("-> ")
 
@@ -153,11 +171,8 @@ def main():
     if opts.verbose:
       sys.stderr.write("-> ")
 
-  if not opts.quiet:
-    sys.stderr.write("Done\n")
-
-
-
+    if not opts.quiet:
+      sys.stderr.write("Done\n")
 
 
 if __name__=="__main__":
