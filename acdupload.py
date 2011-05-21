@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+#
 # Copyright (c) 2011 anatanokeitai.com(sakurai_youhei)
 # 
 # Permission is hereby granted, free of charge, to any person obtaining a
@@ -22,7 +24,26 @@
 # The Software shall be used for Younger than you, not Older.
 # 
 """
-Upload files to root(/) of your Amazon Cloud Drive.
+administrator@Tualatin ~/svn/pyacd $ ./acdupload.py --help
+Usage: acdupload.py [Options] file1 file2 ...
+
+Options:
+  --version             show program's version number and exit
+  -h, --help            show this help message and exit
+  -e EMAIL, --email=EMAIL
+                        email address for Amazon
+  -p PASSWORD, --password=PASSWORD
+                        password for Amazon
+  -v, --verbose         show debug infomation
+  -q, --quiet           quiet mode
+
+This command upload files to root(/) of your Amazon Cloud Drive. If you have
+same named file in root(/), uploading file is renamed automatically. (e.g.
+'test.mp3' -> 'test (2).mp3')
+
+administrator@Tualatin ~/svn/pyacd $ ./acdupload.py -e someone@example.com -p xxxx ~/test.jpg 
+Logining to Amazon.com ... Done
+Uploading test.jpg ... Done
 """
 
 import sys
@@ -31,7 +52,10 @@ from optparse import OptionParser
 
 import pyacd
 
-parser=OptionParser(usage="%prog [Options] file1 file2 ...",version="%prog 0.1")
+parser=OptionParser(epilog="This command upload files to root(/) of your Amazon Cloud Drive. "+
+                            "If you have same named file in root(/), "+
+                            "uploading file is renamed automatically. (e.g. 'test.mp3' -> 'test (2).mp3')",
+                    usage="%prog [Options] file1 file2 ...",version="%prog 0.1")
 
 parser.add_option("-e","--email",dest="email",action="store",default=None,
                   help="email address for Amazon")
@@ -39,6 +63,8 @@ parser.add_option("-p","--password",dest="password",action="store",default=None,
                   help="password for Amazon")
 parser.add_option("-v","--verbose",dest="verbose",action="store_true",default=False,
                   help="show debug infomation")
+parser.add_option("-q","--quiet",dest="quiet",action="store_true",default=False,
+                  help="quiet mode")
 
 def main():
   opts,args=parser.parse_args(sys.argv[1:])
@@ -64,7 +90,8 @@ def main():
   # Login to Amazon.com
   session=None
   try:
-    print "Login to Amazon.com ... ",
+    if not opts.quiet:
+      sys.stderr.write("Logining to Amazon.com ... ")
     session=pyacd.login(opts.email,opts.password)
   except:
     pass
@@ -80,7 +107,8 @@ def main():
     sys.stderr.write("Login failed.\n%s"%session)
     sys.exit(2)
 
-  print "Done"
+  if not opts.quiet:
+    sys.stderr.write("Done\n")
 
   for file in args:
     filename = os.path.basename(file)
@@ -88,17 +116,22 @@ def main():
     filedata = f.read()
     f.close()
 
-    print "Upload %s ... "%filename,
+    if not opts.quiet:
+      sys.stderr.write("Uploading %s ... "%filename)
 
     # create file
-    if verbose:
-      print "[create object] ",
+    if opts.verbose:
+      sys.stderr.write("create ")
     fileobj = pyacd.api.create_by_path("/",filename)
+    if opts.verbose:
+      sys.stderr.write("-> ")
 
     # get upload_url
-    if verbose:
-      print "[retrieve url] ",
+    if opts.verbose:
+      sys.stderr.write("url ")
     upload_url = pyacd.api.get_upload_url_by_id(fileobj.object_id,len(filedata))
+    if opts.verbose:
+      sys.stderr.write("-> ")
 
     end_point=upload_url.http_request.end_point
     parameters=upload_url.http_request.parameters
@@ -107,16 +140,21 @@ def main():
     object_id=upload_url.object_id
 
     # upload file
-    if verbose:
-      print "[upload data] ",
+    if opts.verbose:
+      sys.stderr.write("send ")
     pyacd.api.upload(end_point,parameters,filename,filedata)
+    if opts.verbose:
+      sys.stderr.write("-> ")
 
     # completeing file
-    if verbose:
-      print "[complete object] ",
+    if opts.verbose:
+      sys.stderr.write("finish ")
     pyacd.api.complete_file_upload_by_id(object_id,storage_key)
+    if opts.verbose:
+      sys.stderr.write("-> ")
 
-    print "Done"
+  if not opts.quiet:
+    sys.stderr.write("Done\n")
 
 
 
