@@ -25,7 +25,7 @@
 # 
 """
 administrator@Tualatin ~/svn/pyacd $ ./acddownload.py --help
-Usage: acddownload.py [Options] file1 file2 ...
+Usage: acddownload.py [Options] file1 file2 - ...('-' means STDIN)
 
 Options:
   --version             show program's version number and exit
@@ -57,12 +57,16 @@ import os
 from optparse import OptionParser
 import pickle
 
+pyacd_lib_dir=os.path.dirname(os.__file__)+os.sep+"pyacd"
+if os.path.exists(pyacd_lib_dir) and os.path.isdir(pyacd_lib_dir):
+  sys.path.insert(0, pyacd_lib_dir)
+
 import pyacd
 
 parser=OptionParser(epilog="This command download file(s) from your Amazon Cloud Drive. "+
                             "If there is same named file, downloading is canceled "+
                             "automatically. (or use --force option)",
-                    usage="%prog [Options] file1 file2 ...",version="%prog 0.2")
+                    usage="%prog [Options] file1 file2 - ...('-' means STDIN)",version="%prog 0.2")
 
 parser.add_option("-e","--email",dest="email",action="store",default=None,
                   help="email address for Amazon.com")

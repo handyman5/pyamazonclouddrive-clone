@@ -25,7 +25,7 @@
 # 
 """
 administrator@Tualatin ~/svn/pyacd $ ./acdlist.py --help
-Usage: acdlist.py [Options] path1 path2 ...
+Usage: acdlist.py [Options] path1 path2 - ...('-' means STDIN)
 
 Options:
   --version             show program's version number and exit
@@ -37,6 +37,7 @@ Options:
   -s FILE, --session=FILE
                         save or load login session to/from FILE
   -l                    use a long listing format
+  -t TYPE, --type=TYPE  list type (ALL|FILE|FOLDER) [default: ALL]
   -v, --verbose         show debug infomation
   -q, --quiet           quiet mode
 
@@ -58,11 +59,15 @@ from optparse import OptionParser
 import pickle
 import time,datetime
 
+pyacd_lib_dir=os.path.dirname(os.__file__)+os.sep+"pyacd"
+if os.path.exists(pyacd_lib_dir) and os.path.isdir(pyacd_lib_dir):
+  sys.path.insert(0, pyacd_lib_dir)
+
 import pyacd
 
 parser=OptionParser(epilog="This command lists files and directories of "
                            "your Amazon Cloud Drive. ",
-                    usage="%prog [Options] path1 path2 ...",version="%prog 0.2")
+                    usage="%prog [Options] path1 path2 - ...('-' means STDIN)",version="%prog 0.2")
 
 parser.add_option("-e","--email",dest="email",action="store",default=None,
                   help="email address for Amazon.com")
@@ -72,6 +77,8 @@ parser.add_option("-s","--session",dest="session",action="store",default=None,
                   metavar="FILE",help="save or load login session to/from FILE")
 parser.add_option("-l",dest="long_format",action="store_true",default=False,
                   help="use a long listing format")
+parser.add_option("-t","--type",dest="list_type",action="store",default="ALL",
+                  metavar="TYPE",help="list type (ALL|FILE|FOLDER) [default: %default]")
 parser.add_option("-v","--verbose",dest="verbose",action="store_true",default=False,
                   help="show debug infomation")
 parser.add_option("-q","--quiet",dest="quiet",action="store_true",default=False,
@@ -168,6 +175,8 @@ def main():
       print "total %s (%s)"%(len(obj),path)
       print "==modified========== ==size/type== ==version== ==name=========="
     for o in obj:
+      if opts.list_type!="ALL" and opts.list_type!=o.Type:
+        continue
       if opts.long_format:
         print "%s "%datetime.datetime(*time.localtime(o.modified)[:-3]).isoformat(),
         if o.Type == pyacd.types.FILE:

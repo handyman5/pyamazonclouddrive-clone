@@ -25,7 +25,7 @@
 # 
 """
 administrator@Tualatin ~/svn/pyacd $ ./acdmkdir.py --help
-Usage: acdmkdir.py [Options] dir1 dir2 ...
+Usage: acdmkdir.py [Options] dir1 dir2 - ...('-' means STDIN)
 
 Options:
   --version             show program's version number and exit
@@ -53,12 +53,16 @@ import os
 from optparse import OptionParser
 import pickle
 
+pyacd_lib_dir=os.path.dirname(os.__file__)+os.sep+"pyacd"
+if os.path.exists(pyacd_lib_dir) and os.path.isdir(pyacd_lib_dir):
+  sys.path.insert(0, pyacd_lib_dir)
+
 import pyacd
 
 parser=OptionParser(epilog="This command makes dir(s) in your Amazon Cloud Drive. "+
                             "If there is same named dir, making dir is aborted "+
                             "automatically.",
-                    usage="%prog [Options] dir1 dir2 ...",version="%prog 0.2")
+                    usage="%prog [Options] dir1 dir2 - ...('-' means STDIN)",version="%prog 0.2")
 
 parser.add_option("-e","--email",dest="email",action="store",default=None,
                   help="email address for Amazon.com")

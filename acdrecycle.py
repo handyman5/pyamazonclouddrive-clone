@@ -25,7 +25,7 @@
 # 
 """
 administrator@Tualatin ~/svn/pyacd $ ./acdrecycle.py --help
-Usage: acdrecycle.py [Options] path1 path2 ...
+Usage: acdrecycle.py [Options] path1 path2 - ...('-' means STDIN)
 
 Options:
   --version             show program's version number and exit
@@ -52,11 +52,15 @@ import os
 from optparse import OptionParser
 import pickle
 
+pyacd_lib_dir=os.path.dirname(os.__file__)+os.sep+"pyacd"
+if os.path.exists(pyacd_lib_dir) and os.path.isdir(pyacd_lib_dir):
+  sys.path.insert(0, pyacd_lib_dir)
+
 import pyacd
 
 parser=OptionParser(epilog="This command move file(s) or dir(s) to Recycle "+
                            "of your Amazon Cloud Drive. ",
-                    usage="%prog [Options] path1 path2 ...",version="%prog 0.2")
+                    usage="%prog [Options] path1 path2 - ...('-' means STDIN)",version="%prog 0.2")
 
 parser.add_option("-e","--email",dest="email",action="store",default=None,
                   help="email address for Amazon.com")
