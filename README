@@ -2,5 +2,34 @@ PyAmazonCloudDrive? (pyacd) is 3rd-party Python library for accessing "Amazon Cl
 
 Now this is just an experimental project, but a GOAL is a few line upload-download like "boto".
 
+######################################################
+# Installation of pyacd
+######################################################
 
+(1) Execute following command
+
+svn checkout http://pyamazonclouddrive.googlecode.com/svn/trunk/pyacd /path/to/your/pylibdir
+
+(2) If you use python 2.5.x and don't use simplejson, also execute following one.
+
+svn checkout http://pyamazonclouddrive.googlecode.com/svn/trunk/simplejson /path/to/your/pylibdir
+
+######################################################
+# Installation and Usage of acdxxx.py
+######################################################
+
+(1) Execute following command
+
+svn checkout http://pyamazonclouddrive.googlecode.com/svn/trunk/ ~/pyacd
+export PATH=$PATH:~/pyacd
+
+(2) Upload files in somewhere.
+
+acdmkdir.py -e someone@example.com -p xxxx -s ~/.acdsession somewhere
+ls -F somewhere|grep -v /|sed "s/[\*|@]$//g"|sed "s/^/somewhere\//g"|acdupload.py -s ~/.acdsession -d somewhere -
+
+(2) Download files in somewhere.
+
+mkdir somewhere
+acdlist.py -s ~/.acdsession -t FILE somewhere|sed "s/^/somewhere\//g"|acddownload.py -s ~/.acdsession -d somewhere -
 

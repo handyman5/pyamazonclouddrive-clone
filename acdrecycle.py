@@ -84,6 +84,11 @@ def main():
     parser.print_help()
     sys.exit(2)
 
+  args=list(set(args))
+  if "-" in args:
+    args.remove("-")
+    args += [x.strip() for x in sys.stdin.readlines()]
+
   if 0==len(args):
     sys.stderr.write("!! no path selected !!\n")
     parser.print_help()
