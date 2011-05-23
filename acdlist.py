@@ -193,7 +193,6 @@ def main():
 
       print o.name if o.Type == pyacd.types.FILE else o.name+"/"
 
-    print
     continue
 
 if __name__=="__main__":
