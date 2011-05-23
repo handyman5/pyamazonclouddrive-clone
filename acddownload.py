@@ -44,36 +44,42 @@ Options:
 import sys
 import os
 from optparse import OptionParser
+import pickle
 
 import pyacd
 
 parser=OptionParser(epilog="This command download file(s) from your Amazon Cloud Drive. "+
-                            "If there is same named file, downloading is aborted "+
+                            "If there is same named file, downloading is canceled "+
                             "automatically. (or use --force option)",
-                    usage="%prog -e EMAIL -p PASSWORD [-q] [-v] [-d PATH] file1 file2 ...",version="%prog 0.1")
+                    usage="%prog [Options] file1 file2 ...",version="%prog 0.2")
 
 parser.add_option("-e","--email",dest="email",action="store",default=None,
-                  help="email address for Amazon")
+                  help="email address for Amazon.com")
 parser.add_option("-p","--password",dest="password",action="store",default=None,
-                  help="password for Amazon")
+                  help="password for Amazon.com")
+parser.add_option("-s","--session",dest="session",action="store",default=None,
+                  metavar="FILE",help="save or load login session to/from FILE")
+parser.add_option("-d","--destination",dest="path",action="store",default="."+os.sep,
+                  help="upload path [default: %default]")
+parser.add_option("-f","--force",dest="force",action="store_true",default=False,
+                  help="override local file if it has same name [default: %default]")
 parser.add_option("-v","--verbose",dest="verbose",action="store_true",default=False,
                   help="show debug infomation")
 parser.add_option("-q","--quiet",dest="quiet",action="store_true",default=False,
                   help="quiet mode")
-parser.add_option("-d","--destination",dest="path",action="store",default="./",
-                  help="upload path [default: %default]")
-parser.add_option("-f","--force",dest="force",action="store_true",default=False,
-                  help="override local file if it has same name [default: %default]")
 
 def main():
   opts,args=parser.parse_args(sys.argv[1:])
 
-  # Check options
-  if not opts.email or not opts.password:
+  # Check options of authentication
+  if opts.session and os.path.exists(opts.session) and not os.path.isdir(opts.session):
+    pass
+  elif not opts.email or not opts.password:
     sys.stderr.write("!! email and password are required !!\n")
     parser.print_help()
     sys.exit(2)
-  elif 0==len(args):
+
+  if 0==len(args):
     sys.stderr.write("!! no file selected !!\n")
     parser.print_help()
     sys.exit(2)
@@ -82,10 +88,12 @@ def main():
     
   # Check destination
   path=opts.path
-  #if path[0]!='/':path='/'+path
-  if path[-1]!='/':path=path+'/'
-  if not os.path.exists(path) or not os.path.isdir(path):
-    sys.stderr.write('"%s" is invalid path\n'%path)
+  if path[-1]!=os.sep:path=path+os.sep
+  if not os.path.exists(path):
+    sys.stderr.write('"%s" does not exist\n'%path)
+    sys.exit(2)
+  elif not os.path.isdir(path):
+    sys.stderr.write('"%s" is not file\n'%path)
     sys.exit(2)
 
   # Login to Amazon.com
@@ -93,7 +101,13 @@ def main():
   try:
     if not opts.quiet:
       sys.stderr.write("Logining to Amazon.com ... ")
-    session=pyacd.login(opts.email,opts.password)
+    if opts.email and opts.password:
+      session=pyacd.login(opts.email,opts.password)
+    else:
+      fp=open(opts.session,"rb")
+      session=pickle.load(fp)
+      fp.close()
+      session=pyacd.login(session=session)
   except:
     pass
 
@@ -111,27 +125,40 @@ def main():
   if not opts.quiet:
     sys.stderr.write("Done\n")
     
-  
+  if opts.session:
+    if not opts.quiet:
+      sys.stderr.write("Updating %s ... "%opts.session)
+    fp=open(opts.session,"wb")
+    fp.truncate()
+    pickle.dump(session,fp)
+    fp.close()
+    if not opts.quiet:
+      sys.stderr.write("Done\n")
 
   for file in args:
+    if file[0]!='/':file='/'+file
     filename = os.path.basename(file)
 
     if not opts.quiet:
-      sys.stderr.write("Downloading %s to %s ... "%(filename,path))
+      sys.stderr.write("Downloading %s to %s ... "%(file,path))
 
     if os.path.exists(path+filename) and not opts.force:
-      sys.stderr.write("Aborted. ('%s' exists.)"%path+filename)
+      sys.stderr.write("Aborted. ('%s' exists.)\n"%(path+filename))
       continue
 
     # get file
     if opts.verbose:
       sys.stderr.write("get ")
-    fileobj = pyacd.api.get_info_by_path(path+filename)
+    try:
+      fileobj = pyacd.api.get_info_by_path(file)
+    except pyacd.PyAmazonCloudDriveApiException,e:
+      sys.stderr.write("Aborted. ('%s')\n"%e.message)
+      continue
     if opts.verbose:
       sys.stderr.write("-> ")
 
     if fileobj.Type!= pyacd.types.FILE:
-      sys.stderr.write("Aborted. ('%s' s not file.)"%file)
+      sys.stderr.write("Aborted. ('%s' is not file.)"%file)
       continue
 
     # download
