@@ -25,20 +25,31 @@
 # 
 """
 administrator@Tualatin ~/svn/pyacd $ ./acddownload.py --help
-Usage: acddownload.py -e EMAIL -p PASSWORD [-q] [-v] [-d PATH] file1 file2 ...
+Usage: acddownload.py [Options] file1 file2 ...
 
 Options:
   --version             show program's version number and exit
   -h, --help            show this help message and exit
   -e EMAIL, --email=EMAIL
-                        email address for Amazon
+                        email address for Amazon.com
   -p PASSWORD, --password=PASSWORD
-                        password for Amazon
+                        password for Amazon.com
+  -s FILE, --session=FILE
+                        save or load login session to/from FILE
+  -d PATH, --destination=PATH
+                        upload path [default: ./]
+  -f, --force           override local file if it has same name [default:
+                        False]
   -v, --verbose         show debug infomation
   -q, --quiet           quiet mode
-  -d PATH, --destination=PATH
-                        download path [default: /]
 
+This command download file(s) from your Amazon Cloud Drive. If there is same
+named file, downloading is canceled automatically. (or use --force option)
+
+administrator@Tualatin ~/svn/pyacd $ ./acddownload.py -s ~/.session README.TXT
+Logining to Amazon.com ... Done
+Updating /home/administrator/.session ... Done
+Downloading /README.TXT to ./ ... Done
 """
 
 import sys

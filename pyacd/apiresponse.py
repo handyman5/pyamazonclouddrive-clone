@@ -96,7 +96,7 @@ class Info(object):
     self.created=result_json.get("creationDate")
     self.parent_path_before_recycle=result_json.get("parentPathBeforeRecycle")
     self.modified=result_json.get("lastUpdatedDate")
-    # Unknown udage
+    # Unknown usage
     # keyName,asin,metadata,orderId,permissions,extension,localFilePath
 
     if self.storage_system:
