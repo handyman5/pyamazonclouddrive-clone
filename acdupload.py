@@ -25,19 +25,21 @@
 # 
 """
 administrator@Tualatin ~/svn/pyacd $ ./acdupload.py --help
-Usage: acdupload.py -e EMAIL -p PASSWORD [-q] [-v] [-d PATH] file1 file2 ...
+Usage: acdupload.py [Options] file1 file2 ...
 
 Options:
   --version             show program's version number and exit
   -h, --help            show this help message and exit
   -e EMAIL, --email=EMAIL
-                        email address for Amazon
+                        email address for Amazon.com
   -p PASSWORD, --password=PASSWORD
-                        password for Amazon
-  -v, --verbose         show debug infomation
-  -q, --quiet           quiet mode
+                        password for Amazon.com
+  -s FILE, --session=FILE
+                        save or load login session to/from FILE
   -d PATH, --destination=PATH
                         upload path [default: /]
+  -v, --verbose         show debug infomation
+  -q, --quiet           quiet mode
 
 This command uploads file(s) to your Amazon Cloud Drive. If there is same
 named file, uploading file is renamed automatically. (e.g. 'test.mp3' -> 'test
@@ -51,34 +53,40 @@ Uploading test.jpg to / ... Done
 import sys
 import os
 from optparse import OptionParser
+import pickle
 
 import pyacd
 
 parser=OptionParser(epilog="This command uploads file(s) to your Amazon Cloud Drive. "+
                             "If there is same named file, uploading file is renamed "+
                             "automatically. (e.g. 'test.mp3' -> 'test (2).mp3')",
-                    usage="%prog -e EMAIL -p PASSWORD [-q] [-v] [-d PATH] file1 file2 ...",version="%prog 0.1")
+                    usage="%prog [Options] file1 file2 ...",version="%prog 0.2")
 
 parser.add_option("-e","--email",dest="email",action="store",default=None,
-                  help="email address for Amazon")
+                  help="email address for Amazon.com")
 parser.add_option("-p","--password",dest="password",action="store",default=None,
-                  help="password for Amazon")
+                  help="password for Amazon.com")
+parser.add_option("-s","--session",dest="session",action="store",default=None,
+                  metavar="FILE",help="save or load login session to/from FILE")
+parser.add_option("-d","--destination",dest="path",action="store",default="/",
+                  help="upload path [default: %default]")
 parser.add_option("-v","--verbose",dest="verbose",action="store_true",default=False,
                   help="show debug infomation")
 parser.add_option("-q","--quiet",dest="quiet",action="store_true",default=False,
                   help="quiet mode")
-parser.add_option("-d","--destination",dest="path",action="store",default="/",
-                  help="upload path [default: %default]")
 
 def main():
   opts,args=parser.parse_args(sys.argv[1:])
 
-  # Check options
-  if not opts.email or not opts.password:
+  # Check options of authentication
+  if opts.session and os.path.exists(opts.session) and not os.path.isdir(opts.session):
+    pass
+  elif not opts.email or not opts.password:
     sys.stderr.write("!! email and password are required !!\n")
     parser.print_help()
     sys.exit(2)
-  elif 0==len(args):
+
+  if 0==len(args):
     sys.stderr.write("!! no file selected !!\n")
     parser.print_help()
     sys.exit(2)
@@ -96,7 +104,13 @@ def main():
   try:
     if not opts.quiet:
       sys.stderr.write("Logining to Amazon.com ... ")
-    session=pyacd.login(opts.email,opts.password)
+    if opts.email and opts.password:
+      session=pyacd.login(opts.email,opts.password)
+    else:
+      fp=open(opts.session,"rb")
+      session=pickle.load(fp)
+      fp.close()
+      session=pyacd.login(session=session)
   except:
     pass
 
@@ -113,7 +127,17 @@ def main():
 
   if not opts.quiet:
     sys.stderr.write("Done\n")
-    
+
+  if opts.session:
+    if not opts.quiet:
+      sys.stderr.write("Updating %s ... "%opts.session)
+    fp=open(opts.session,"wb")
+    fp.truncate()
+    pickle.dump(session,fp)
+    fp.close()
+    if not opts.quiet:
+      sys.stderr.write("Done\n")
+
   # Check destination
   path=opts.path
   if path[0]!='/':path='/'+path
