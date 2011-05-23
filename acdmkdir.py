@@ -25,7 +25,7 @@
 # 
 """
 administrator@Tualatin ~/svn/pyacd $ ./acdmkdir.py --help
-Usage: acdupload.py [Options] file1 file2 ...
+Usage: acdmkdir.py [Options] dir1 dir2 ...
 
 Options:
   --version             show program's version number and exit
@@ -36,18 +36,16 @@ Options:
                         password for Amazon.com
   -s FILE, --session=FILE
                         save or load login session to/from FILE
-  -d PATH, --destination=PATH
-                        upload path [default: /]
   -v, --verbose         show debug infomation
   -q, --quiet           quiet mode
 
-This command makes dir(s) in your Amazon Cloud Drive. If there is same
-named file, uploading file is renamed automatically. (e.g. 'test.mp3' -> 'test
-(2).mp3')
+This command makes dir(s) in your Amazon Cloud Drive. If there is same named
+dir, making dir is aborted automatically.
 
-administrator@Tualatin ~/svn/pyacd $ ./acdmkdir.py -e someone@example.com -p xxxx ~/test.jpg 
+administrator@Tualatin ~/svn/pyacd $ ./acdmkdir.py -s ~/.session testdir
 Logining to Amazon.com ... Done
-Uploading test.jpg to / ... Done
+Updating /home/administratora/.session ... Done
+Making testdir in / ... Done
 """
 
 import sys
@@ -58,7 +56,7 @@ import pickle
 import pyacd
 
 parser=OptionParser(epilog="This command makes dir(s) in your Amazon Cloud Drive. "+
-                            "If there is same named file, making dir is aborted "+
+                            "If there is same named dir, making dir is aborted "+
                             "automatically.",
                     usage="%prog [Options] dir1 dir2 ...",version="%prog 0.2")
 
