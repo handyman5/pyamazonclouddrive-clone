@@ -2,13 +2,14 @@
 # http://stackoverflow.com/questions/1254270/multipart-form-post-to-google-app-engine-not-working
 
 
-import httplib, mimetypes
+import mimetypes
 import urllib2
 import httplib
 import sys
 
 import pyacd
 from pyacd.exception import PyAmazonCloudDriveError
+from pyacd.connection import gen_httplib_conn
 
 def post_multipart(url, fields, files):
     method="POST"
@@ -21,12 +22,7 @@ def post_multipart(url, fields, files):
 
     scheme,host = urllib2.urlparse.urlparse(url)[:2]
 
-    if scheme=='http':
-      conn=httplib.HTTPConnection(host)
-    elif scheme=='https':
-      conn=httplib.HTTPSConnection(host)
-    else:
-      raise PyAmazonCloudDriveError("unsupported scheme. %s"%scheme)
+    conn=gen_httplib_conn(scheme,host)
 
     path = url.split(host,1)[1]
     conn.request(method,path,body,hs)
