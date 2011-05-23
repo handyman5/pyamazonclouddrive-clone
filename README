@@ -6,7 +6,7 @@ Now this is just an experimental project, but a GOAL is a few line upload-downlo
 # Installation of pyacd
 ######################################################
 
-(1) Execute following command
+(1) Execute following command.
 
 svn checkout http://pyamazonclouddrive.googlecode.com/svn/trunk/pyacd /path/to/your/pylibdir
 
@@ -14,11 +14,15 @@ svn checkout http://pyamazonclouddrive.googlecode.com/svn/trunk/pyacd /path/to/y
 
 svn checkout http://pyamazonclouddrive.googlecode.com/svn/trunk/simplejson /path/to/your/pylibdir
 
+(3) Read source in pyacd.
+
+Use the Source, Luke.
+
 ######################################################
 # Installation and Usage of acdxxx.py
 ######################################################
 
-(1) Execute following command
+(1) Execute following command.
 
 svn checkout http://pyamazonclouddrive.googlecode.com/svn/trunk/ ~/pyacd
 export PATH=$PATH:~/pyacd
@@ -28,8 +32,23 @@ export PATH=$PATH:~/pyacd
 acdmkdir.py -e someone@example.com -p xxxx -s ~/.acdsession somewhere
 ls -F somewhere|grep -v /|sed "s/[\*|@]$//g"|sed "s/^/somewhere\//g"|acdupload.py -s ~/.acdsession -d somewhere -
 
-(2) Download files in somewhere.
+(3) Download files to somewhere_else.
 
-mkdir somewhere
-acdlist.py -s ~/.acdsession -t FILE somewhere|sed "s/^/somewhere\//g"|acddownload.py -s ~/.acdsession -d somewhere -
+mkdir somewhere_else
+acdlist.py -s ~/.acdsession -t FILE somewhere|sed "s/^/somewhere\//g"|acddownload.py -s ~/.acdsession -d somewhere_else -
 
+(4) See also help.
+
+acddownload.py --help
+acdlist.py --help
+acdmkdir.py --help
+acdrecycle.py --help
+acdupload.py --help
+
+(5) Alias if you need.
+
+alias acddownload='acddownload.py -s ~/.acdsession -q'
+alias acdlist='acdlist.py -s ~/.acdsession -q'
+alias acdmkdir='acdmkdir.py -s ~/.acdsession -q'
+alias acdrecycle='acdrecycle.py -s ~/.acdsession -q'
+alias acdupload='acdupload.py -s ~/.acdsession -q'
