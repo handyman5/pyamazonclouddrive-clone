@@ -21,6 +21,7 @@
 # 
 # The Software shall be used for Younger than you, not Older.
 # 
+import sys
 import time
 import urllib
 try:
@@ -59,6 +60,27 @@ def complete_file_upload_by_id(object_id,storage_key):
   resp_json=json.loads(pyacd.conn.do_get(end_point))
   _error_check(resp_json)
 
+def can_device_download():
+  session = pyacd.get_session()
+  if not session.is_logined():
+    raise pyacd.PyAmazonCloudDriveError("Not logined %s"%session)
+
+  operation="canDeviceDownload"
+  params={
+    "_":int(time.time()),
+    "Operation":operation,
+    "customerId":session.customer_id,
+    "ContentType":"JSON",
+    "deviceId.deviceType":"ubid",
+    "deviceId.deviceSerialNumber":session.cookies["ubid-main"]
+  }
+  end_point=pyacd.api_root+"?"+urllib.urlencode(params)
+  resp_json=json.loads(pyacd.conn.do_get(end_point))
+  _error_check(resp_json)
+
+  result=resp_json.get(operation+"Response").get(operation+"Result")
+  return result["canDownload"]
+
 def get_upload_url_by_id(object_id,size,method="POST"):
   session = pyacd.get_session()
   if not session.is_logined():
@@ -85,6 +107,18 @@ def download_by_id(object_id,attachment=0):
   session = pyacd.get_session()
   if not session.is_logined():
     raise pyacd.PyAmazonCloudDriveError("Not logined %s"%session)
+
+  if not can_device_download():
+    sys.stderr.write(
+      "\n\n"+
+      "You have exceeded the maximum number of devices allowed. "+
+      "Downloading is disabled for this browser.\n\n"+
+      "SEE ALSO http://www.amazon.com/gp/help/customer/display.html/?ie=UTF8&nodeId=200557340\n"+
+      "Frequently Asked Questions\n"+
+      "How many devices can I use to access the files I've stored in my Cloud Drive?\n"+
+      "\n\n"
+    )
+    raise pyacd.PyAmazonCloudDriveError("device limit (up to eight devices.) can be reached.")
 
   params={
     "downloadById":object_id,

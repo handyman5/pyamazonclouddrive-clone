@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+#
 # Copyright (c) 2011 anatanokeitai.com(sakurai_youhei)
 # 
 # Permission is hereby granted, free of charge, to any person obtaining a

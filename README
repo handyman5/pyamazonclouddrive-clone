@@ -3,6 +3,27 @@ PyAmazonCloudDrive? (pyacd) is 3rd-party Python library for accessing "Amazon Cl
 Now this is just an experimental project, but a GOAL is a few line upload-download like "boto".
 
 ######################################################
+# *WARNING* Amazon Cloud Drive: Terms of Use
+######################################################
+
+http://www.amazon.com/gp/help/customer/display.html/?nodeId=200557360
+
+6. Software
+
+you may not ... (f) modify, reverse engineer, decompile or disassemble, or 
+otherwise tamper with, the Software, whether in whole or in part, or create 
+any derivative works from or of the Software.
+
+######################################################
+# *WARNING* device limit (up to eight devices.)
+######################################################
+
+http://www.amazon.com/gp/help/customer/display.html/?ie=UTF8&nodeId=200557340\n
+
+Frequently Asked Questions
+How many devices can I use to access the files I've stored in my Cloud Drive?
+
+######################################################
 # Installation of pyacd
 ######################################################
 
@@ -44,6 +65,7 @@ acdlist.py --help
 acdmkdir.py --help
 acdrecycle.py --help
 acdupload.py --help
+acdcat.py --help
 
 (5) Alias if you need.
 
@@ -52,3 +74,4 @@ alias acdlist='acdlist.py -s ~/.acdsession -q'
 alias acdmkdir='acdmkdir.py -s ~/.acdsession -q'
 alias acdrecycle='acdrecycle.py -s ~/.acdsession -q'
 alias acdupload='acdupload.py -s ~/.acdsession -q'
+alias acdcat='acdcat.py -s ~/.acdsession -q'

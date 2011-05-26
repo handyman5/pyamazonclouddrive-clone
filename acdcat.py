@@ -24,8 +24,8 @@
 # The Software shall be used for Younger than you, not Older.
 # 
 """
-administrator@Tualatin ~/svn/pyacd $ ./acddownload.py --help
-Usage: acddownload.py [Options] file1 file2 - ...('-' means STDIN)
+administrator@Tualatin ~/svn/pyacd $ ./acdcat.py --help
+Usage: acdcat.py [Options] file1 file2 - ...('-' means STDIN)
 
 Options:
   --version             show program's version number and exit
@@ -36,20 +36,10 @@ Options:
                         password for Amazon.com
   -s FILE, --session=FILE
                         save or load login session to/from FILE
-  -d PATH, --destination=PATH
-                        download path [default: ./]
-  -f, --force           override local file if it has same name [default:
-                        False]
   -v, --verbose         show debug infomation
   -q, --quiet           quiet mode
 
-This command download file(s) from your Amazon Cloud Drive. If there is same
-named file, downloading is canceled automatically. (or use --force option)
-
-administrator@Tualatin ~/svn/pyacd $ ./acddownload.py -s ~/.session README.TXT
-Logining to Amazon.com ... Done
-Updating /home/administrator/.session ... Done
-Downloading /README.TXT to ./ ... Done
+This command shows file(s) from your Amazon Cloud Drive.
 """
 
 import sys
@@ -63,9 +53,7 @@ if os.path.exists(pyacd_lib_dir) and os.path.isdir(pyacd_lib_dir):
 
 import pyacd
 
-parser=OptionParser(epilog="This command download file(s) from your Amazon Cloud Drive. "+
-                            "If there is same named file, downloading is canceled "+
-                            "automatically. (or use --force option)",
+parser=OptionParser(epilog="This command shows file(s) from your Amazon Cloud Drive. ",
                     usage="%prog [Options] file1 file2 - ...('-' means STDIN)",version="%prog 0.2")
 
 parser.add_option("-e","--email",dest="email",action="store",default=None,
@@ -74,10 +62,6 @@ parser.add_option("-p","--password",dest="password",action="store",default=None,
                   help="password for Amazon.com")
 parser.add_option("-s","--session",dest="session",action="store",default=None,
                   metavar="FILE",help="save or load login session to/from FILE")
-parser.add_option("-d","--destination",dest="path",action="store",default="."+os.sep,
-                  help="download path [default: %default]")
-parser.add_option("-f","--force",dest="force",action="store_true",default=False,
-                  help="override local file if it has same name [default: %default]")
 parser.add_option("-v","--verbose",dest="verbose",action="store_true",default=False,
                   help="show debug infomation")
 parser.add_option("-q","--quiet",dest="quiet",action="store_true",default=False,
@@ -106,16 +90,6 @@ def main():
   else:
     pass
     
-  # Check destination
-  path=opts.path
-  if path[-1]!=os.sep:path=path+os.sep
-  if not os.path.exists(path):
-    sys.stderr.write('"%s" does not exist\n'%path)
-    sys.exit(2)
-  elif not os.path.isdir(path):
-    sys.stderr.write('"%s" is not file\n'%path)
-    sys.exit(2)
-
   # Login to Amazon.com
   session=None
   try:
@@ -160,11 +134,7 @@ def main():
     filename = os.path.basename(file)
 
     if not opts.quiet:
-      sys.stderr.write("Downloading %s to %s ... "%(file,path))
-
-    if os.path.exists(path+filename) and not opts.force:
-      sys.stderr.write("Aborted. ('%s' exists.)\n"%(path+filename))
-      continue
+      sys.stderr.write("Downloading %s ... "%(file))
 
     # get file
     if opts.verbose:
@@ -184,15 +154,10 @@ def main():
     # download
     data=pyacd.api.download_by_id(fileobj.object_id)
     
-
-    f=open(path+filename,"wb")
-    f.truncate()
-    f.write(data)
-    f.close()
-
     if not opts.quiet:
       sys.stderr.write("Done\n")
 
+    sys.stdout.write(data)
 
 if __name__=="__main__":
   main()
