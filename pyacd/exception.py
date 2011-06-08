@@ -24,9 +24,7 @@
 
 
 class PyAmazonCloudDriveError(StandardError):
-  """
-  General PyAmazonCloudDriveError error 
-  """
+  """General error"""
 
   def __init__(self, reason):
     StandardError.__init__(self)
@@ -39,6 +37,8 @@ class PyAmazonCloudDriveError(StandardError):
     return 'PyAmazonCloudDriveError: %s' % self.reason
 
 class PyAmazonCloudDriveApiException(PyAmazonCloudDriveError):
+  """server returns error code and message"""
+
   def __init__(self,error_obj):
       if not isinstance(error_obj,dict):
         PyAmazonCloudDriveError.__init__(self,error_obj)
@@ -47,4 +47,3 @@ class PyAmazonCloudDriveApiException(PyAmazonCloudDriveError):
         self.code=error_obj.get("Code")
         self._type=error_obj.get("Type")
         PyAmazonCloudDriveError.__init__(self,"%s:%s"%(self.code,self.message))
-        

@@ -22,5 +22,11 @@
 # The Software shall be used for Younger than you, not Older.
 # 
 
+"""Entity statuses in Amazon Cloud Drive
+
+AVIABLE means normal status
+PENDING means that file was created but have not been finished.
+"""
+
 AVIABLE="AVIABLE"
 PENDING="PENDING"

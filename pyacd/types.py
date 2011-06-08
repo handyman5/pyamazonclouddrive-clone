@@ -22,6 +22,14 @@
 # The Software shall be used for Younger than you, not Older.
 # 
 
+"""Entity types in Amazon Cloud Drive
+
+ROOT means /.
+RECYCLE means /RecycleBin.
+FOLDER means folder.
+FILE means file.
+"""
+
 ROOT="ROOT"
 RECYCLE="RECYCLE"
 FOLDER="FOLDER"
