@@ -27,13 +27,14 @@
 import sys
 import unittest
 from cStringIO import StringIO
-from ConfigParser import SafeConfigParser
+#from ConfigParser import SafeConfigParser
 import time
 import xml.dom.minidom
 
 import pyacd
 pyacd.debug_level=2
 
+"""
 config_file="../pyacd.ini"
 
 parser=SafeConfigParser()
@@ -42,6 +43,14 @@ credentials=dict(parser.items("Credentials"))
 
 email=credentials.get("email",None)
 password=credentials.get("password",None)
+"""
+if len(sys.argv)!=3:
+  sys.stderr.write("usage: ./test.py email password")
+  sys.exit(2)
+
+email=sys.argv[1]
+password=sys.argv[2]
+
 print "**Config**"
 print "email->",email
 print "password->",password
