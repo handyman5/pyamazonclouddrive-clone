@@ -24,8 +24,8 @@
 
 """Entity types in Amazon Cloud Drive
 
-ROOT means /.
-RECYCLE means /RecycleBin.
+ROOT means "/".
+RECYCLE means "/RecycleBin".
 FOLDER means folder.
 FILE means file.
 """
