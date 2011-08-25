@@ -19,7 +19,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 # IN THE SOFTWARE.
 # 
-# The Software shall be used for Younger than you, not Older.
+# The Software shall be used for *YOUNGER* than you, not *OLDER*.
 # 
 
 """Library to access Amazon Cloud Drive
@@ -76,7 +76,7 @@ if session and session.is_logined():
 __author__ = "sakurai_youhei"
 __copyright__ = "Copyright (c) 2011 anatanokeitai.com(sakurai_youhei)"
 __license__ = "MIT"
-__version__ = "0.0.5"
+__version__ = "0.0.6"
 __maintainer__ = "sakurai_youhei"
 __status__ = "Prototype"
 

@@ -21,7 +21,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 # IN THE SOFTWARE.
 # 
-# The Software shall be used for Younger than you, not Older.
+# The Software shall be used for *YOUNGER* than you, not *OLDER*.
 # 
  
 import sys
@@ -34,16 +34,6 @@ import xml.dom.minidom
 import pyacd
 pyacd.debug_level=2
 
-"""
-config_file="../pyacd.ini"
-
-parser=SafeConfigParser()
-parser.read(config_file)
-credentials=dict(parser.items("Credentials"))
-
-email=credentials.get("email",None)
-password=credentials.get("password",None)
-"""
 if len(sys.argv)!=3:
   sys.stderr.write("usage: ./test.py email password")
   sys.exit(2)
@@ -51,10 +41,11 @@ if len(sys.argv)!=3:
 email=sys.argv[1]
 password=sys.argv[2]
 
-print "**Config**"
-print "email->",email
-print "password->",password
+print "*** Inputs are here ***"
+print "email:",email
+print "password:",password
 print "*"*20
+print ""
 
 session=None
 

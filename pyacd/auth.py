@@ -19,7 +19,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 # IN THE SOFTWARE.
 # 
-# The Software shall be used for Younger than you, not Older.
+# The Software shall be used for *YOUNGER* than you, not *OLDER*.
 # 
 
 import re

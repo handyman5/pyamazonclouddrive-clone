@@ -8,11 +8,11 @@ Now this is just an experimental project, but a GOAL is a few line upload-downlo
 
 http://www.amazon.com/gp/help/customer/display.html/?nodeId=200557360
 
-6. Software
+  6. Software
 
-you may not ... (f) modify, reverse engineer, decompile or disassemble, or 
-otherwise tamper with, the Software, whether in whole or in part, or create 
-any derivative works from or of the Software.
+  you may not ... (f) modify, reverse engineer, decompile or disassemble, or 
+  otherwise tamper with, the Software, whether in whole or in part, or create 
+  any derivative works from or of the Software.
 
 ######################################################
 # *WARNING* device limit (up to eight devices.)
@@ -20,20 +20,22 @@ any derivative works from or of the Software.
 
 http://www.amazon.com/gp/help/customer/display.html/?ie=UTF8&nodeId=200557340\n
 
-Frequently Asked Questions
-How many devices can I use to access the files I've stored in my Cloud Drive?
+  Frequently Asked Questions
+  How many devices can I use to access the files I've stored in my Cloud Drive?
 
 ######################################################
 # Installation of pyacd
 ######################################################
 
-(1) Execute following command.
+(1) Checkout repository with svn. (Execute following command.)
 
-svn checkout http://pyamazonclouddrive.googlecode.com/svn/trunk/pyacd /path/to/your/pylibdir
+  svn checkout http://pyamazonclouddrive.googlecode.com/svn/trunk/pyacd /path/to/your/pylibdir
 
-(2) If you use python 2.5.x and don't use simplejson, also execute following one.
+(2) If you use python 2.5.x (or lower version one) and 
+    you have not ever used simplejson library, also execute 
+    following one.
 
-svn checkout http://pyamazonclouddrive.googlecode.com/svn/trunk/simplejson /path/to/your/pylibdir
+  svn checkout http://pyamazonclouddrive.googlecode.com/svn/trunk/simplejson /path/to/your/pylibdir
 
 (3) Read source in pyacd.
 
@@ -43,35 +45,35 @@ Use the Source, Luke.
 # Installation and Usage of acdxxx.py
 ######################################################
 
-(1) Execute following command.
+(1) Checkout whole repository with svn. (Execute following command.)
 
-svn checkout http://pyamazonclouddrive.googlecode.com/svn/trunk/ ~/pyacd
-export PATH=$PATH:~/pyacd
+  svn checkout http://pyamazonclouddrive.googlecode.com/svn/trunk/ ~/pyacd
+  export PATH=$PATH:~/pyacd
 
 (2) Upload files in somewhere.
 
-acdmkdir.py -e someone@example.com -p xxxx -s ~/.acdsession somewhere
-ls -F somewhere|grep -v /|sed "s/[\*|@]$//g"|sed "s/^/somewhere\//g"|acdput.py -s ~/.acdsession -d somewhere -
+  acdmkdir.py -e someone@example.com -p xxxx -s ~/.acdsession somewhere
+  ls -F somewhere|grep -v /|sed "s/[\*|@]$//g"|sed "s/^/somewhere\//g"|acdput.py -s ~/.acdsession -d somewhere -
 
 (3) Download files to somewhere_else.
 
-mkdir somewhere_else
-acdlist.py -s ~/.acdsession -t FILE somewhere|sed "s/^/somewhere\//g"|acdget.py -s ~/.acdsession -d somewhere_else -
+  mkdir somewhere_else
+  acdlist.py -s ~/.acdsession -t FILE somewhere|sed "s/^/somewhere\//g"|acdget.py -s ~/.acdsession -d somewhere_else -
 
 (4) See also help.
 
-acdget.py --help
-acdlist.py --help
-acdmkdir.py --help
-acdrecycle.py --help
-acdput.py --help
-acdcat.py --help
+  acdget.py --help
+  acdlist.py --help
+  acdmkdir.py --help
+  acdrecycle.py --help
+  acdput.py --help
+  acdcat.py --help
 
 (5) Alias if you need.
 
-alias acdget='acdget.py -s ~/.acdsession -q'
-alias acdlist='acdlist.py -s ~/.acdsession -q'
-alias acdmkdir='acdmkdir.py -s ~/.acdsession -q'
-alias acdrecycle='acdrecycle.py -s ~/.acdsession -q'
-alias acdput='acdput.py -s ~/.acdsession -q'
-alias acdcat='acdcat.py -s ~/.acdsession -q'
+  alias acdget='acdget.py -s ~/.acdsession -q'
+  alias acdlist='acdlist.py -s ~/.acdsession -q'
+  alias acdmkdir='acdmkdir.py -s ~/.acdsession -q'
+  alias acdrecycle='acdrecycle.py -s ~/.acdsession -q'
+  alias acdput='acdput.py -s ~/.acdsession -q'
+  alias acdcat='acdcat.py -s ~/.acdsession -q'
