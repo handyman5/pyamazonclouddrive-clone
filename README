@@ -1,3 +1,7 @@
+*NOTE*: This is a fork of the PyAmazonCloudDrive project located at http://code.google.com/p/pyamazonclouddrive/. All credit goes to the original author, whose name I believe to be Sakurai Youhei <http://d.hatena.ne.jp/sakurai_youhei/>. I just wanted it in git so I could use it in a different project. Although development appears to have stalled, I'll import any changes from the original in the "upstream" branch.
+
+----
+
 PyAmazonCloudDrive? (pyacd) is 3rd-party Python library for accessing "Amazon Cloud Drive".
 
 Now this is just an experimental project, but a GOAL is a few line upload-download like "boto".
