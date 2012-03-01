@@ -112,7 +112,7 @@ class Info(object):
     return '<Info: %s%s (type=%s,status=%s,version=%d)>' % (self.path,self.name,self.Type,self.status,self.version)
 
   def __str__(self):
-    return '<Info: %s%s (type=%s,status=%s,version=%d)>' % (self.path,self.name,self.Type,self.status,self.version)
+    return '<Info: %s%s (type=%s,status=%s,version=%d)>' % (self.path.encode('utf8'),self.name.encode('utf8'),self.Type,self.status,self.version)
 
 class StorageSystem(object):
   def __init__(self,result_json):
