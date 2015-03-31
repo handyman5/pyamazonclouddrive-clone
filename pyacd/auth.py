@@ -51,7 +51,7 @@ def login(email=None,password=None,session=None):
   end_point="https://"+pyacd.amazon_domain+"/clouddrive"
   html=pyacd.do_get(end_point)
 
-  NOT_LOGGED_INS=[r"ue_url='\/gp\/feature\.html",r'<form name="signIn" method="POST"']
+  NOT_LOGGED_INS=[r"ue_url='\/gp\/feature\.html",r'<form name="signIn" method="POST"',r'id="sign-in-container"']
   CONTINUE_REQUIRED=r'<form action="\/clouddrive" id="continueForm"'
 
   if False in [re.search(x,html) is None for x in NOT_LOGGED_INS]:
@@ -83,24 +83,8 @@ def login(email=None,password=None,session=None):
     html=pyacd.do_post(action,body)
 
   try:
-    customer_id=html.split("customerId",1)[1]
-    customer_id=customer_id.split(">",1)[0]
-    customer_id=re.sub('.*value="','',customer_id)
-    customer_id=re.sub('".*','',customer_id)
-    pyacd.session.customer_id=customer_id
-
-    username=html.split("customer_greeting",1)[1]
-    username=username.split("<",1)[0]
-    # ToDo: how to make it globalized
-    try:
-      # For www.amazon.com
-      username=username.split(",")[1][1:]
-      username=re.sub(r'\..*','',username)
-    except:
-      # For www.amazon.co.jp
-      username = username.decode('shift-jis')
-      username=username.split(u"、")[1].split(u"さん")[0]
-    pyacd.session.username=username
+    pyacd.session.customer_id=re.search('customerId: "(.+)"', html).groups()[0]
+    pyacd.session.username="<deprecated>"
 
     if re.search(r"ADrive\.touValidate = true;",html):
       pyacd.session.agreed_with_terms = True
