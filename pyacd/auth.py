@@ -48,7 +48,7 @@ def login(email=None,password=None,session=None):
   else:
     pyacd.session=Session()
   
-  end_point="https://"+pyacd.amazon_domain+"/clouddrive"
+  end_point="https://"+pyacd.amazon_domain+"/clouddrive?sf=1&ref_=cd_home_sign_bnh"
   html=pyacd.do_get(end_point)
 
   NOT_LOGGED_INS=[r"ue_url='\/gp\/feature\.html",r'<form name="signIn" method="POST"',r'id="sign-in-container"']
