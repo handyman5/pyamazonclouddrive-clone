@@ -18,9 +18,10 @@
 # WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 # IN THE SOFTWARE.
-# 
-# The Software shall be used for *YOUNGER* than you, not *OLDER*.
-# 
+
+# These are respective contributors who gives valuable feedback.
+# - Adam Compton (https://github.com/handyman5)
+# - Matt Luongo (https://github.com/mhluongo)
 
 """Library to access Amazon Cloud Drive
 
@@ -42,6 +43,8 @@ Amazon Cloud Drive is based on...
 You may use following functions and classes...
 
  * pyacd.login()
+ * pyacd.set_amazon_domain()
+ * pyacd.Session
  * pyacd.api.*
  * pyacd.types.*
  * pyacd.status.*
@@ -52,7 +55,7 @@ Sample code(Downloading)
 ----
 import pyacd
 session = pyacd.login("someone@example.com","foobar")
-if session and session.is_logined():
+if session and session.is_logged_in():
   fileobj = pyacd.api.get_info_by_path("/path/to/file")
   data=pyacd.api.download_by_id(fileobj.object_id)
 ----
@@ -61,7 +64,7 @@ Sample code(Uploading)
 ----
 import pyacd
 session = pyacd.login("someone@example.com","foobar")
-if session and session.is_logined():
+if session and session.is_logged_in() and session.agreed_with_terms:
   fileobj = pyacd.api.create_by_path("/path/to/upload","filename")
   data = open("/path/to/file","rb").read()
   upload_url = pyacd.api.get_upload_url_by_id(fileobj.object_id,len(data))
@@ -73,33 +76,70 @@ if session and session.is_logined():
 ----
 """
 
-__author__ = "sakurai_youhei"
+__author__ = "Youhei Sakurai"
+__credits__ = ["Adam Compton", "Matt Luongo"]
 __copyright__ = "Copyright (c) 2011 anatanokeitai.com(sakurai_youhei)"
 __license__ = "MIT"
-__version__ = "0.0.6"
-__maintainer__ = "sakurai_youhei"
+__version__ = "0.1.2"
+__maintainer__ = "Youhei Sakurai"
 __status__ = "Prototype"
 
-
 from pyacd.exception import *
-from pyacd.connection import Connection
-from pyacd.multipart import post_multipart
+from pyacd.connection import do_get, do_delete, do_post, do_put
+from pyacd.multipart import do_post_multipart
 
-from pyacd.auth import login
+from pyacd.auth import login, Session
 
 import types
 import status
-
 import api
 
+import urllib2
 
 debug_level=0
-conn=Connection()
-api_root="https://www.amazon.com/clouddrive/api/"
+amazon_domain="www.amazon.com"
+api_root="https://"+amazon_domain+"/clouddrive/api/"
+
+
+session = None
+opener = None
+
+def set_amazon_domain(domain):
+  """ Switch Amazon's domain. e.g. from www.amazon.com to www.amazon.co.jp
+  :type domain: string
+  """
+  global amazon_domain,api_root
+  amazon_domain=domain
+  api_root="https://"+amazon_domain+"/clouddrive/api/"
 
 def get_session():
   """ Get current session having login status and tokens.
   :rtype: :class:`pyacd.session.Session`
   :return: Inclues cookies, username and customer_id.
   """
-  return conn.session
+  return session
+
+def rebuild_opener():
+  global opener
+  if not session:
+    raise PyAmazonCloudDriveError("pyacd.session must not be None.")
+  opener = urllib2.build_opener(CustomHTTPCookieProcessor(session.cookies))
+  opener.addheaders = [(
+    'User-agent', 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/535.7 (KHTML, like Gecko) Chrome/16.0.912.75 Safari/535.7'
+  )]
+
+def get_device_serial_number():
+  ubidlist = {
+    "www.amazon.com": "ubid-main",
+    "www.amazon.co.jp": "ubid-acbjp"
+  }
+  return session.cookies._cookies[amazon_domain[3:]]["/"][ubidlist[amazon_domain]].value
+
+# Below codes is from http://weboo-returns.com/blog/urllib2-raises-error-by-201-response/
+class CustomHTTPCookieProcessor(urllib2.HTTPCookieProcessor):
+  def http_error_201(self, request, response, code, msg, hdrs):
+    return response
+  def http_error_204(self, request, response, code, msg, hdrs):
+    return response
+  def http_error_206(self, request, response, code, msg, hdrs):
+    return response

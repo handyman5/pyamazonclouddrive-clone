@@ -8,11 +8,8 @@ import httplib
 import sys
 
 import pyacd
-from pyacd.exception import PyAmazonCloudDriveError
-from pyacd.connection import gen_httplib_conn
 
-def post_multipart(url, fields, files):
-    method="POST"
+def do_post_multipart(url, fields, files):
     content_type, body = encode_multipart_formdata(fields, files)
     #print body
 
@@ -20,31 +17,7 @@ def post_multipart(url, fields, files):
     # http://code.google.com/p/pyamazonclouddrive/issues/detail?id=1
     hs={'content-type': content_type,'content-length': str(len(body))}
 
-    scheme,host = urllib2.urlparse.urlparse(url)[:2]
-
-    conn=gen_httplib_conn(scheme,host)
-
-    path = url.split(host,1)[1]
-    conn.request(method,path,body,hs)
-
-    if pyacd.debug_level:
-      sys.stderr.write(method)
-
-    resp = conn.getresponse()
-    #print "code->",resp.status
-    if 400< resp.status <599:
-      sys.stderr.write(resp.read())
-      raise PyAmazonCloudDriveError("response code is %d"%resp.status)
-
-    if pyacd.debug_level:
-      sys.stderr.write("->")
-
-    #if resp.getheader("Location"):
-    #  return pyacd.conn.do_get(resp.getheader("Location"))
-
-    resp_body=resp.read()
-    conn.close()
-    return resp_body
+    return pyacd.do_post(url,body,hs)
 
 def encode_multipart_formdata(fields, files):
     """

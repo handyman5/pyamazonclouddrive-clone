@@ -18,9 +18,6 @@
 # WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 # IN THE SOFTWARE.
-# 
-# The Software shall be used for Younger than you, not Older.
-# 
 """API wrappers
 
 * can_device_download: Check whether downloading is allowed.
@@ -74,7 +71,7 @@ except ImportError,e:
   import simplejson as json
 
 import pyacd
-from apiresponse import *
+from pyacd.apiresponse import *
 
 
 def _error_check(resp_json):
@@ -98,7 +95,7 @@ def upload(end_point,parameters,filename,filedata):
   """
   params=parameters.copy()
   params["Filename"]=filename
-  pyacd.post_multipart(end_point,params,{filename:filedata})
+  pyacd.do_post_multipart(end_point,params,{filename:filedata})
 
 def complete_file_upload_by_id(object_id,storage_key):
   """Finalize uploading file.
@@ -110,7 +107,7 @@ def complete_file_upload_by_id(object_id,storage_key):
   :param storage_key: upload_url.storage_key
   """
   session = pyacd.get_session()
-  if not session.is_logined():
+  if not session.is_logged_in():
     raise pyacd.PyAmazonCloudDriveError("Not logined %s"%session)
 
   operation="completeFileUploadById"
@@ -123,7 +120,7 @@ def complete_file_upload_by_id(object_id,storage_key):
     "storageKey":storage_key,
   }
   end_point=pyacd.api_root+"?"+urllib.urlencode(params)
-  resp_json=json.loads(pyacd.conn.do_get(end_point))
+  resp_json=json.loads(pyacd.do_get(end_point))
   _error_check(resp_json)
 
 def can_device_download():
@@ -133,7 +130,7 @@ def can_device_download():
   :return: whether downloading is allowed.
   """
   session = pyacd.get_session()
-  if not session.is_logined():
+  if not session.is_logged_in():
     raise pyacd.PyAmazonCloudDriveError("Not logined %s"%session)
 
   operation="canDeviceDownload"
@@ -143,10 +140,10 @@ def can_device_download():
     "customerId":session.customer_id,
     "ContentType":"JSON",
     "deviceId.deviceType":"ubid",
-    "deviceId.deviceSerialNumber":session.cookies["ubid-main"]
+    "deviceId.deviceSerialNumber":pyacd.get_device_serial_number()
   }
   end_point=pyacd.api_root+"?"+urllib.urlencode(params)
-  resp_json=json.loads(pyacd.conn.do_get(end_point))
+  resp_json=json.loads(pyacd.do_get(end_point))
   _error_check(resp_json)
 
   result=resp_json.get(operation+"Response").get(operation+"Result")
@@ -168,8 +165,11 @@ def get_upload_url_by_id(object_id,size,method="POST"):
   :return: informations of uploading.
   """
   session = pyacd.get_session()
-  if not session.is_logined():
+  if not session.is_logged_in():
     raise pyacd.PyAmazonCloudDriveError("Not logined %s"%session)
+
+  if not session.agreed_with_terms:
+    raise pyacd.PyAmazonCloudDriveError("You need to agree with license terms at web page: https://%s/clouddrive"%pyacd.amazon_domain)
 
   operation="getUploadUrlById"
   params={
@@ -182,7 +182,7 @@ def get_upload_url_by_id(object_id,size,method="POST"):
     "method":method
   }
   end_point=pyacd.api_root+"?"+urllib.urlencode(params)
-  resp_json=json.loads(pyacd.conn.do_get(end_point))
+  resp_json=json.loads(pyacd.do_get(end_point))
   _error_check(resp_json)
 
   result=resp_json.get(operation+"Response").get(operation+"Result")
@@ -201,7 +201,7 @@ def download_by_id(object_id,attachment=0):
   :return: data stored in S3
   """
   session = pyacd.get_session()
-  if not session.is_logined():
+  if not session.is_logged_in():
     raise pyacd.PyAmazonCloudDriveError("Not logined %s"%session)
 
   if not can_device_download():
@@ -221,14 +221,13 @@ def download_by_id(object_id,attachment=0):
     "attachment":attachment
   }
   end_point=pyacd.api_root[:-1*len("/api/")]+"?"+urllib.urlencode(params)
-  #print end_point
-  return pyacd.conn.do_get(end_point)
+  return pyacd.do_get(end_point)
 
 def empty_recycle_bin():
   """Empty out "/RecycleBin".
   """
   session = pyacd.get_session()
-  if not session.is_logined():
+  if not session.is_logged_in():
     raise pyacd.PyAmazonCloudDriveError("Not logined %s"%session)
 
   operation="emptyRecycleBin"
@@ -239,7 +238,7 @@ def empty_recycle_bin():
     "ContentType":"JSON",
   }
   end_point=pyacd.api_root+"?"+urllib.urlencode(params)
-  resp_json=json.loads(pyacd.conn.do_get(end_point))
+  resp_json=json.loads(pyacd.do_get(end_point))
   _error_check(resp_json)
 
 def recycle_bulk_by_id(source_inclusion_ids=[]):
@@ -260,7 +259,7 @@ def remove_bulk_by_id(source_inclusion_ids=[]):
 
 def _operate2_bulk_by_id(operation,source_inclusion_ids):
   session = pyacd.get_session()
-  if not session.is_logined():
+  if not session.is_logged_in():
     raise pyacd.PyAmazonCloudDriveError("Not logined %s"%session)
 
   if len(source_inclusion_ids)==0:
@@ -274,12 +273,12 @@ def _operate2_bulk_by_id(operation,source_inclusion_ids):
   }
   params.update(dict([["inclusionIds.member.%d"%(i+1),source_inclusion_ids[i]] for i in range(len(source_inclusion_ids))]))
   end_point=pyacd.api_root+"?"+urllib.urlencode(params)
-  resp_json=json.loads(pyacd.conn.do_get(end_point))
+  resp_json=json.loads(pyacd.do_get(end_point))
   _error_check(resp_json)
     
 def _operate1_bulk_by_id(operation,destination_parent_id,source_inclusion_ids,conflict_resolution):
   session = pyacd.get_session()
-  if not session.is_logined():
+  if not session.is_logged_in():
     raise pyacd.PyAmazonCloudDriveError("Not logined %s"%session)
 
   if len(source_inclusion_ids)==0:
@@ -295,7 +294,7 @@ def _operate1_bulk_by_id(operation,destination_parent_id,source_inclusion_ids,co
   }
   params.update(dict([["sourceInclusionIds.member.%d"%(i+1),source_inclusion_ids[i]] for i in range(len(source_inclusion_ids))]))
   end_point=pyacd.api_root+"?"+urllib.urlencode(params)
-  resp_json=json.loads(pyacd.conn.do_get(end_point))
+  resp_json=json.loads(pyacd.do_get(end_point))
   _error_check(resp_json)
 
 def move_bulk_by_id(destination_parent_id,source_inclusion_ids=[],conflict_resolution="MERGE"):
@@ -341,7 +340,7 @@ def move_by_id(source_id,destination_parent_id,destination_name,overwrite=False)
   :param overwrite: whether override or not.
   """
   session = pyacd.get_session()
-  if not session.is_logined():
+  if not session.is_logged_in():
     raise pyacd.PyAmazonCloudDriveError("Not logined %s"%session)
 
   operation="moveById"
@@ -356,7 +355,7 @@ def move_by_id(source_id,destination_parent_id,destination_name,overwrite=False)
     "overwrite":"true" if overwrite else "false"
   }
   end_point=pyacd.api_root+"?"+urllib.urlencode(params)
-  resp_json=json.loads(pyacd.conn.do_get(end_point))
+  resp_json=json.loads(pyacd.do_get(end_point))
   _error_check(resp_json)
 
 
@@ -385,7 +384,7 @@ def create_by_path(path,name,Type=pyacd.types.FILE,conflict_resolution="RENAME",
   :return: information of created one.
   """
   session = pyacd.get_session()
-  if not session.is_logined():
+  if not session.is_logged_in():
     raise pyacd.PyAmazonCloudDriveError("Not logined %s"%session)
 
   operation="createByPath"
@@ -402,7 +401,7 @@ def create_by_path(path,name,Type=pyacd.types.FILE,conflict_resolution="RENAME",
     "autoparent":"true" if autoparent else "false"
   }
   end_point=pyacd.api_root+"?"+urllib.urlencode(params)
-  resp_json=json.loads(pyacd.conn.do_get(end_point))
+  resp_json=json.loads(pyacd.do_get(end_point))
   _error_check(resp_json)
   result=resp_json.get(operation+"Response").get(operation+"Result")
   return Info(result.get("info"))
@@ -426,7 +425,7 @@ def create_by_id(parent_id,name,Type=pyacd.types.FOLDER,overwrite=False):
   :return: information of created one.
   """
   session = pyacd.get_session()
-  if not session.is_logined():
+  if not session.is_logged_in():
     raise pyacd.PyAmazonCloudDriveError("Not logined %s"%session)
 
   operation="createById"
@@ -441,7 +440,7 @@ def create_by_id(parent_id,name,Type=pyacd.types.FOLDER,overwrite=False):
     "overwrite":"true" if overwrite else "false"
   }
   end_point=pyacd.api_root+"?"+urllib.urlencode(params)
-  resp_json=json.loads(pyacd.conn.do_get(end_point))
+  resp_json=json.loads(pyacd.do_get(end_point))
   _error_check(resp_json)
   result=resp_json.get(operation+"Response").get(operation+"Result")
   return Info(result.get("info"))
@@ -473,7 +472,7 @@ def list_by_id(object_id,ordering=None,next_token=0,max_items=None,Filter=None):
   :return: informations listed.
   """
   session = pyacd.get_session()
-  if not session.is_logined():
+  if not session.is_logged_in():
     raise pyacd.PyAmazonCloudDriveError("Not logined %s"%session)
 
   operation="listById"
@@ -490,7 +489,7 @@ def list_by_id(object_id,ordering=None,next_token=0,max_items=None,Filter=None):
   if Filter:params["filter"]=Filter
   
   end_point=pyacd.api_root+"?"+urllib.urlencode(params)
-  resp_json=json.loads(pyacd.conn.do_get(end_point))
+  resp_json=json.loads(pyacd.do_get(end_point))
   _error_check(resp_json)
   result=resp_json.get(operation+"Response").get(operation+"Result")
   return List(result)
@@ -512,7 +511,7 @@ def select_metadata(query):
   :return: informations selected.
   """
   session = pyacd.get_session()
-  if not session.is_logined():
+  if not session.is_logged_in():
     raise pyacd.PyAmazonCloudDriveError("Not logined %s"%session)
 
   operation="selectMetadata"
@@ -525,7 +524,7 @@ def select_metadata(query):
   }
   
   end_point=pyacd.api_root+"?"+urllib.urlencode(params)
-  resp_json=json.loads(pyacd.conn.do_get(end_point))
+  resp_json=json.loads(pyacd.do_get(end_point))
   _error_check(resp_json)
   result=resp_json.get(operation+"Response").get(operation+"Result")
   return Metadata(result)
@@ -540,7 +539,7 @@ def get_info_by_path(path):
   :return: information.
   """
   session = pyacd.get_session()
-  if not session.is_logined():
+  if not session.is_logged_in():
     raise pyacd.PyAmazonCloudDriveError("Not logined %s"%session)
 
   operation="getInfoByPath"
@@ -554,7 +553,7 @@ def get_info_by_path(path):
   }
 
   end_point=pyacd.api_root+"?"+urllib.urlencode(params)
-  resp_json=json.loads(pyacd.conn.do_get(end_point))
+  resp_json=json.loads(pyacd.do_get(end_point))
   _error_check(resp_json)
   result=resp_json.get(operation+"Response").get(operation+"Result")
   return Info(result)
@@ -569,7 +568,7 @@ def get_info_by_id(object_id):
   :return: information.
   """
   session = pyacd.get_session()
-  if not session.is_logined():
+  if not session.is_logged_in():
     raise pyacd.PyAmazonCloudDriveError("Not logined %s"%session)
 
   operation="getInfoById"
@@ -583,7 +582,7 @@ def get_info_by_id(object_id):
   }
 
   end_point=pyacd.api_root+"?"+urllib.urlencode(params)
-  resp_json=json.loads(pyacd.conn.do_get(end_point))
+  resp_json=json.loads(pyacd.do_get(end_point))
   _error_check(resp_json)
   result=resp_json.get(operation+"Response").get(operation+"Result")
   return Info(result)
@@ -596,7 +595,7 @@ def get_user_storage():
   :return: information.
   """
   session = pyacd.get_session()
-  if not session.is_logined():
+  if not session.is_logged_in():
     raise pyacd.PyAmazonCloudDriveError("Not logined %s"%session)
 
   operation="getUserStorage"
@@ -608,7 +607,7 @@ def get_user_storage():
   }
 
   end_point=pyacd.api_root+"?"+urllib.urlencode(params)
-  resp_json=json.loads(pyacd.conn.do_get(end_point))
+  resp_json=json.loads(pyacd.do_get(end_point))
   _error_check(resp_json)
   result=resp_json.get(operation+"Response").get(operation+"Result")
 
@@ -624,7 +623,7 @@ def get_subscription_problem():
   :return: (?)
   """
   session = pyacd.get_session()
-  if not session.is_logined():
+  if not session.is_logged_in():
     raise pyacd.PyAmazonCloudDriveError("Not logined %s"%session)
 
   operation="getSubscriptionProblem"
@@ -635,7 +634,7 @@ def get_subscription_problem():
     "ContentType":"JSON"
   }
   end_point=pyacd.api_root+"?"+urllib.urlencode(params)
-  resp_json=json.loads(pyacd.conn.do_get(end_point))
+  resp_json=json.loads(pyacd.do_get(end_point))
   _error_check(resp_json)
   result=resp_json.get(operation+"Response").get(operation+"Result")
 

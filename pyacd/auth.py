@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 # Copyright (c) 2011 anatanokeitai.com(sakurai_youhei)
 # 
 # Permission is hereby granted, free of charge, to any person obtaining a
@@ -18,86 +20,94 @@
 # WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 # IN THE SOFTWARE.
-# 
-# The Software shall be used for *YOUNGER* than you, not *OLDER*.
-# 
 
-import re
-import urllib
-from HTMLParser import HTMLParser
+import re, pickle, threading
+import urllib, cookielib
 
 import pyacd
 
 def login(email=None,password=None,session=None):
+  """Login either with email and password or session.
+
+  :type email: string
+  :param email: email address registered to Amazon
+
+  :type password: string
+  :param password: password
+
+  :type session: pyacd.session.Session
+  :param session: previous session
+
+  :rtype: :class:`pyacd.session.Session`
+  :return: Inclues cookies, username and customer_id.
+  """
   if session:
-    pyacd.conn.session=Session(session)
+    pyacd.session=Session(session)
   elif email is None or password is None:
-    raise TypeError("invalid args email->%s,password->%s"%(email,password))
+    raise TypeError("Invalid args, email:%s, password:%s"%(email,password))
   else:
-    pyacd.conn.session=Session()
+    pyacd.session=Session()
   
-  end_point="https://www.amazon.com/clouddrive"
-  html=pyacd.conn.do_get(end_point)
+  end_point="https://"+pyacd.amazon_domain+"/clouddrive"
+  html=pyacd.do_get(end_point)
 
-  if email and password:
-    begin='<form name="signIn"'
-    end='</form>'
-    html=begin + html.split(begin,1)[1].split(end,1)[0] +end
+  NOT_LOGGED_INS=[r"ue_url='\/gp\/feature\.html",r'<form name="signIn" method="POST"']
+  CONTINUE_REQUIRED=r'<form action="\/clouddrive" id="continueForm"'
 
-    parser=CustomHTMLParser()
-    parser.feed(html)
-    parser.close()
-
-    action=parser.action
-    params=parser.key_value.copy()
-
+  if False in [re.search(x,html) is None for x in NOT_LOGGED_INS]:
+    if not (email and password):
+      raise pyacd.PyAmazonCloudDriveError("Both email and password are required.")
+    link = re.search(r'"(\/gp\/drive\/files.*?)"',html)
+    if link:
+      html=pyacd.do_get("https://"+pyacd.amazon_domain+link.groups()[0])
+    form = re.search(r'<form name="signIn" method="POST" .*?<\/form>',re.sub(r"\n|\r","",html)).group()
+    action = re.search('action="(.*?)"',form).groups()[0]
+    inputs = [re.search(' name="(.*?)".*? value="(.*?)"',x) for x in re.findall('<input.*?>',form)]
+    params = dict([x.groups() for x in inputs if x!=None])
     params["create"]=0
-    #params["x"]=0
-    #params["y"]=0
-    #params["metadata1"]=""
     params["email"]=email
     params["password"]=password
     body=urllib.urlencode(params)
-    html=pyacd.conn.do_post(action,body,{"Content-Type":"application/x-www-form-urlencoded"})
+    html=pyacd.do_post(action,body)
+    if False in [re.search(x,html) is None for x in NOT_LOGGED_INS]:
+      raise pyacd.PyAmazonCloudDriveError("Login failed.")
+
+  if re.search(CONTINUE_REQUIRED,html):
+    form = re.search(CONTINUE_REQUIRED+r".*?<\/form>",re.sub(r"\n|\r","",html)).group()
+    action = re.search('action="(.*?)"',form).groups()[0]
+    inputs = [re.search(' name="(.*?)".*? value="(.*?)"',x) for x in re.findall('<input.*?>',form)]
+    params = dict([x.groups() for x in inputs if x!=None])
+    if action[0]=="/":
+      action = "https://"+pyacd.amazon_domain+action
+    body=urllib.urlencode(params)
+    html=pyacd.do_post(action,body)
 
   try:
     customer_id=html.split("customerId",1)[1]
     customer_id=customer_id.split(">",1)[0]
     customer_id=re.sub('.*value="','',customer_id)
     customer_id=re.sub('".*','',customer_id)
-    pyacd.conn.session.customer_id=customer_id
+    pyacd.session.customer_id=customer_id
 
     username=html.split("customer_greeting",1)[1]
     username=username.split("<",1)[0]
-    username=username.split(",")[1][1:]
-    username=re.sub(r'\..*','',username)
-    pyacd.conn.session.username=username
+    # ToDo: how to make it globalized
+    try:
+      # For www.amazon.com
+      username=username.split(",")[1][1:]
+      username=re.sub(r'\..*','',username)
+    except:
+      # For www.amazon.co.jp
+      username = username.decode('shift-jis')
+      username=username.split(u"、")[1].split(u"さん")[0]
+    pyacd.session.username=username
+
+    if re.search(r"ADrive\.touValidate = true;",html):
+      pyacd.session.agreed_with_terms = True
   except:
     pass
-    
-  return pyacd.conn.session
 
-
-
-
-class CustomHTMLParser(HTMLParser):
-  def __init__(self):
-    HTMLParser.__init__(self)
-    self.key_value={}
-    self.action=""
-
-  def handle_starttag(self, tag, attrs):
-    d=dict(attrs)
-    if tag=="form":
-      #print d
-      self.action=d.get("action","")
-    elif tag=='input':
-      if d.get('name'):
-        self.key_value[d.get('name')]=d.get('value','')
-  def handle_endtag(self, tag):
-    if tag=='input':
-      pass
-
+  return pyacd.session
 
 
 
@@ -105,45 +115,53 @@ class Session(object):
   def __init__(self,session=None):
     self.username=None
     self.customer_id=None
-    self.cookies={}
-    self._initializing=True
-    if not session:
-      pyacd.conn.session=self
-      end_point = "http://www.amazon.com/"
-      pyacd.conn.do_get(end_point)
-      pyacd.conn.do_get(end_point)
-      self._initializing=False
+    self.agreed_with_terms = False;
+    pyacd.session=self
+    if session:
+      self.cookies = session.cookies
+      pyacd.rebuild_opener()
     else:
-      self.cookies.update(session.cookies)
-      self._initializing=False
-     
-      
+      self.cookies=PicklableCookieJar()
+      pyacd.rebuild_opener()
+      end_point = "http://"+pyacd.amazon_domain+"/"
+      pyacd.do_get(end_point)
+
+  @classmethod
+  def load_from_file(cls,filepath):
+    fp=open(filepath,"rb")
+    session=pickle.load(fp)
+    fp.close()
+    return session
+
+  def save_to_file(self,filepath):
+    fp=open(filepath,"wb")
+    fp.truncate()
+    pickle.dump(self,fp)
+    fp.close()
+
   def __repr__(self):
-    return '<Session: %s>' % ",".join( [ k for k,v in self.cookies.items() ] )
+    return '<Session: username: %s, customer_id: %s, agreed_with_terms: %s>' % (self.username, self.customer_id, self.agreed_with_terms)
 
   def __str__(self):
-    return '<Session: %s>' % ",".join( [ k for k,v in self.cookies.items() ] )
-    
-  def is_valid(self):
-    if self._initializing:
-      return True
-    else:
-      return self.cookies.has_key("session-id") and \
-                    self.cookies.has_key("session-id-time") and \
-                         self.cookies.has_key("ubid-main")
+    return '<Session: username: %s, customer_id: %s, agreed_with_terms: %s>' % (self.username, self.customer_id, self.agreed_with_terms)
 
-  def is_logined(self):
-    return (self.is_valid() and self.username and self.customer_id)
-
-  def update_cookies(self,cookie_str):
-    #self.cookies={}
-    for c in cookie_str.split(", "):
-      if c.startswith("session-") or c.startswith("ubid-") or c.startswith("x-") or \
-                                                          c.startswith("__")or c.startswith("at-"):
-        self.cookies.update( dict( [re.sub(";.*","",c).split("=",1),] ) )
+  def is_logged_in(self):
+    return (self.username and self.customer_id)
 
   def print_debug(self):
     print "*"*20
-    for k,v in self.cookies.items():
+    for k,v in self.cookies._cookies.items():
       print "%s=%s"%(k,v)
-    
+
+
+# This workaround is from "http://stackoverflow.com/questions/1023224/how-to-pickle-a-cookiejar".
+class PicklableCookieJar(cookielib.CookieJar):
+  def __getstate__(self):
+    state = self.__dict__.copy()
+    del state['_cookies_lock']
+    return state
+
+  def __setstate__(self, state):
+    self.__dict__ = state
+    self._cookies_lock = threading.RLock()
+

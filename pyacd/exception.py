@@ -1,5 +1,5 @@
 # Copyright (c) 2011 anatanokeitai.com(sakurai_youhei)
-#
+# 
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the
 # "Software"), to deal in the Software without restriction, including
@@ -18,9 +18,6 @@
 # WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 # IN THE SOFTWARE.
-#
-# The Software shall be used for Younger than you, not Older.
-#
 
 
 class PyAmazonCloudDriveError(StandardError):
@@ -31,10 +28,10 @@ class PyAmazonCloudDriveError(StandardError):
     self.reason = reason
 
   def __repr__(self):
-    return u'PyAmazonCloudDriveError: %s' % self.reason
+    return u'PyAmazonCloudDriveError: ' + self.reason.encode('utf8')
 
   def __str__(self):
-    return 'PyAmazonCloudDriveError: ' + self.reason.encode('utf8')
+    return u'PyAmazonCloudDriveError: ' + self.reason.encode('utf8')
 
 class PyAmazonCloudDriveApiException(PyAmazonCloudDriveError):
   """server returns error code and message"""
