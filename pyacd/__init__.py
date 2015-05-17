@@ -131,7 +131,8 @@ def rebuild_opener():
 def get_device_serial_number():
   ubidlist = {
     "www.amazon.com": "ubid-main",
-    "www.amazon.co.jp": "ubid-acbjp"
+    "www.amazon.co.jp": "ubid-acbjp",
+    "www.amazon.de": "ubid-acbde"
   }
   return session.cookies._cookies[amazon_domain[3:]]["/"][ubidlist[amazon_domain]].value
 
